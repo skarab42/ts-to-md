@@ -39,5 +39,8 @@
     "twitch": "^4.6.5",
     "twitch-auth": "^4.6.5",
     "typescript": "^4.3.5"
+  },
+  "dependencies": {
+    "tsutils": "^3.21.0"
   }
 }
