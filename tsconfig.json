@@ -1,0 +1,50 @@
+{
+  "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "dist",
+    "target": "es2015",
+    // Basic Options
+    "checkJs": true,
+    // "rootDir": "src",
+    "sourceMap": true,
+    // "declaration": true,
+    // "declarationMap": true,
+    // "declarationDir": "dist/@types",
+    "removeComments": true,
+    "importHelpers": true,
+
+    // Strict Type-Checking Options
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    // Additional Checks
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "allowUnreachableCode": false,
+
+    // Module Resolution Options
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+
+    // Advanced Options
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // Build options
+    "listFiles": false,
+    "listEmittedFiles": true
+  }
+}

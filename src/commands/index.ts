@@ -1,0 +1,1 @@
+export { interfaceToTable } from "./interfaceToTable";
