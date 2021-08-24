@@ -1,67 +1,56 @@
 import ts from "typescript";
-
 import * as vscode from "vscode";
-import * as utils from "tsutils";
+import { getActiveEditor } from "../lib/vsc-utils";
+import {
+  createProgramAndGetSourceFile,
+  getDocumentationCommentAsString,
+  getNearestInterface,
+  getPositionOfLineAndCharacter,
+  getTypeOfSymbolAtLocationAsString,
+} from "../lib/ts-utils";
 
 export async function interfaceToTable(this: vscode.ExtensionContext) {
-  const editor = vscode.window.activeTextEditor;
-
-  if (!editor) {
-    return;
-  }
-
   try {
+    const editor = getActiveEditor();
     const { document, selection } = editor;
-    const { fileName } = document;
-    const { line, character } = selection.start;
-    const program = ts.createProgram([fileName], {});
-    const sourceFile = program.getSourceFile(fileName);
-
-    if (!sourceFile) {
-      return;
-    }
-
-    const position = ts.getPositionOfLineAndCharacter(
-      sourceFile,
-      line,
-      character
+    const { program, sourceFile } = createProgramAndGetSourceFile(
+      document.fileName
     );
 
-    const token = utils.getTokenAtPosition(sourceFile, position);
+    const position = getPositionOfLineAndCharacter(sourceFile, selection.start);
+    const nearestInterface = getNearestInterface(sourceFile, position);
 
-    if (!token) {
+    if (!nearestInterface) {
       return;
     }
 
-    const { parent } = token;
+    const checker = program.getTypeChecker();
+    const symbol = checker.getSymbolAtLocation(nearestInterface.name);
 
-    if (parent && utils.isInterfaceDeclaration(parent)) {
-      const checker = program.getTypeChecker();
-      const symbol = checker.getSymbolAtLocation(parent.name);
-
-      if (!symbol) {
-        return;
-      }
-
-      const members = symbol.members;
-      const name = symbol.escapedName;
-      const docs = ts.displayPartsToString(
-        symbol.getDocumentationComment(checker)
-      );
-
-      // console.log(">>>", { parent, token, symbol, members });
-      console.log(">>>", { name, docs });
-
-      if (members) {
-        members.forEach((member) => {
-          const type = checker.getTypeOfSymbolAtLocation(
-            member,
-            member.valueDeclaration!
-          );
-          console.log("---", member.escapedName, checker.typeToString(type));
-        });
-      }
+    if (!symbol) {
+      return;
     }
+
+    const { members, escapedName } = symbol;
+    const docs = getDocumentationCommentAsString(checker, symbol);
+
+    const lines = [`# Interface ${escapedName}`];
+
+    if (docs) {
+      lines.push(docs);
+    }
+
+    if (members) {
+      members.forEach((memberSymbol) => {
+        const type = getTypeOfSymbolAtLocationAsString(checker, memberSymbol);
+
+        if (type) {
+          lines.push(`${memberSymbol.escapedName} - ${type}`);
+        }
+      });
+    }
+
+    console.log(lines.join("\n"));
   } catch (error) {
     console.log(error);
   }
