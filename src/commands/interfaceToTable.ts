@@ -1,7 +1,4 @@
-import {
-  getActiveEditor,
-  // writeAndOpenMarkdownDocument,
-} from "../lib/vsc-utils";
+import { getActiveEditor } from "../lib/vsc-utils";
 import {
   getNearestInterface,
   getPositionOfLineAndCharacter,
@@ -77,13 +74,28 @@ export async function interfaceToTable(this: ExtensionContext) {
       markdownText += `${intDef.docs}\n\n`;
     }
 
+    const labels = ["name", "type", "optional", "default", "description"];
+    const spearators: string[] = Array(labels.length).fill(
+      "-",
+      0,
+      labels.length
+    );
+
+    markdownText += `| ${labels.join(" | ")} |\n`;
+    markdownText += `| ${spearators.join(" | ")} |\n`;
+
     intDef.props.forEach((prop) => {
-      markdownText += `${prop.name} - ${prop.type} - ${prop.optional} - ${prop.docs}\n`;
+      const values = [
+        prop.name,
+        `\`${prop.type}\``,
+        `\`${prop.optional}\``,
+        prop.defaultValue ?? "n/a",
+        prop.docs,
+      ];
+      markdownText += `| ${values.join(" | ")} |\n`;
     });
 
     console.log(markdownText);
-
-    // await writeAndOpenMarkdownDocument(document, intDef.name, markdownText);
   } catch (error) {
     console.log(error);
     window.showWarningMessage(error.stack);
