@@ -40,4 +40,6 @@ interface F extends Omit<E, "test1"> {
  */
 interface Options extends C, D, T, T2, F {
   moreOptions: string[];
+  prop1: string | undefined;
+  prop2?: string;
 }

@@ -9,6 +9,7 @@ import {
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
 import { ExtensionContext, window } from "vscode";
+import ts from "typescript";
 
 interface interfaceDef {
   name: string;
@@ -20,7 +21,7 @@ interface InterfaceProp {
   name: string;
   type: string;
   desc?: string;
-  required: boolean;
+  optional: boolean;
 }
 
 export async function interfaceToTable(this: ExtensionContext) {
@@ -51,10 +52,12 @@ export async function interfaceToTable(this: ExtensionContext) {
     for (const prop of type.getProperties()) {
       const declaration = prop.valueDeclaration || prop.declarations?.[0];
       const propType = checker.getTypeOfSymbolAtLocation(prop, declaration!);
+      const optional = (prop.flags & ts.SymbolFlags.Optional) !== 0;
+
       intDef.props.push({
         name: prop.getName(),
         type: checker.typeToString(propType),
-        required: false,
+        optional,
       });
     }
 
@@ -65,7 +68,7 @@ export async function interfaceToTable(this: ExtensionContext) {
     }
 
     intDef.props.forEach((prop) => {
-      markdownText += `${prop.name} - ${prop.type}\n`;
+      markdownText += `${prop.name} - ${prop.type} - ${prop.optional}\n`;
     });
 
     console.log(markdownText);
