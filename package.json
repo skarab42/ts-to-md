@@ -1,6 +1,6 @@
 {
-  "name": "md-types",
-  "displayName": "MD Types",
+  "name": "ts-to-md",
+  "displayName": "TS Definitions to Markdown",
   "version": "1.0.0",
   "main": "./dist/src/extension.js",
   "license": "MIT",
@@ -16,15 +16,23 @@
   "contributes": {
     "commands": [
       {
-        "title": "MD Types: Interface to table",
-        "command": "md-types.interfaceToTable"
+        "title": "Interface to table",
+        "command": "ts-to-md.interfaceToTable",
+        "category": "TS Definitions to Markdown"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "md-types.interfaceToTable",
+          "command": "ts-to-md.interfaceToTable",
           "when": "editorLangId == typescript"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "ts-to-md.interfaceToTable",
+          "group": "9_cutcopypaste",
+          "when": "editorTextFocus && editorLangId == typescript"
         }
       ]
     }
