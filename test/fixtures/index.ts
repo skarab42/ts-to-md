@@ -1,13 +1,9 @@
-type Id = string;
+import { C, D } from "./types";
 
-interface C {
-  id: Id;
-  name: string;
-}
+type Id = number;
 
 interface A {
-  id: Id;
-  c: C;
+  id: Id | boolean | string;
   name: string;
 }
 
@@ -15,13 +11,33 @@ interface A {
  * Describe B...
  */
 interface B extends A {
-  desc?: string;
+  desc?: string | string[];
   /**
    * Describe enabled in B
    */
   enabled?: boolean;
 }
 
-interface A {
+interface T {
+  do(arg: string): void;
+}
+
+interface T2 {
+  dodo: (arg: string) => void;
+}
+
+interface E {
+  test1?: string;
+  test2: number;
+}
+
+interface F extends Omit<E, "test1"> {
+  test1?: number;
+}
+
+/**
+ * Options de mon super plugin....
+ */
+interface Options extends C, D, T, T2, F {
   moreOptions: string[];
 }

@@ -1,15 +1,27 @@
 import {
   getActiveEditor,
-  writeAndOpenMarkdownDocument,
+  // writeAndOpenMarkdownDocument,
 } from "../lib/vsc-utils";
 import {
   getNearestInterface,
   getPositionOfLineAndCharacter,
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
-  getTypeOfSymbolAtLocationAsString,
 } from "../lib/ts-utils";
 import { ExtensionContext, window } from "vscode";
+
+interface interfaceDef {
+  name: string;
+  docs: string;
+  props: InterfaceProp[];
+}
+
+interface InterfaceProp {
+  name: string;
+  type: string;
+  desc?: string;
+  required: boolean;
+}
 
 export async function interfaceToTable(this: ExtensionContext) {
   try {
@@ -27,38 +39,38 @@ export async function interfaceToTable(this: ExtensionContext) {
     }
 
     const checker = program.getTypeChecker();
-    const symbol = checker.getSymbolAtLocation(nearestInterface.name);
+    const type = checker.getTypeAtLocation(nearestInterface.name);
+    const docs = getDocumentationCommentAsString(checker, type.symbol);
 
-    if (!symbol) {
-      return;
-    }
+    const intDef: interfaceDef = {
+      name: type.symbol.escapedName.toString(),
+      docs,
+      props: [],
+    };
 
-    const { members, escapedName } = symbol;
-    const docs = getDocumentationCommentAsString(checker, symbol);
-
-    const lines = [`# Interface ${escapedName}\n`];
-
-    if (docs) {
-      lines.push(`${docs}\n`);
-    }
-
-    if (members) {
-      members.forEach((memberSymbol) => {
-        const type = getTypeOfSymbolAtLocationAsString(checker, memberSymbol);
-
-        if (type) {
-          lines.push(`${memberSymbol.escapedName} - ${type}`);
-        }
+    for (const prop of type.getProperties()) {
+      const declaration = prop.valueDeclaration || prop.declarations?.[0];
+      const propType = checker.getTypeOfSymbolAtLocation(prop, declaration!);
+      intDef.props.push({
+        name: prop.getName(),
+        type: checker.typeToString(propType),
+        required: false,
       });
     }
 
-    const markdownText = lines.join("\n");
+    let markdownText = `# ${intDef.name}\n\n`;
 
-    await writeAndOpenMarkdownDocument(
-      document,
-      escapedName as string,
-      markdownText
-    );
+    if (intDef.docs) {
+      markdownText += `${intDef.docs}\n\n`;
+    }
+
+    intDef.props.forEach((prop) => {
+      markdownText += `${prop.name} - ${prop.type}\n`;
+    });
+
+    console.log(markdownText);
+
+    // await writeAndOpenMarkdownDocument(document, intDef.name, markdownText);
   } catch (error) {
     console.log(error);
     window.showWarningMessage(error.stack);
