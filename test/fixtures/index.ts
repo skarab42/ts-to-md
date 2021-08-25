@@ -1,7 +1,13 @@
 type Id = string;
 
+interface C {
+  id: Id;
+  name: string;
+}
+
 interface A {
   id: Id;
+  c: C;
   name: string;
 }
 
@@ -14,4 +20,8 @@ interface B extends A {
    * Describe enabled in B
    */
   enabled?: boolean;
+}
+
+interface A {
+  moreOptions: string[];
 }

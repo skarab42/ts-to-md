@@ -1,15 +1,17 @@
-import ts from "typescript";
-import * as vscode from "vscode";
-import { getActiveEditor } from "../lib/vsc-utils";
 import {
-  createProgramAndGetSourceFile,
-  getDocumentationCommentAsString,
+  getActiveEditor,
+  writeAndOpenMarkdownDocument,
+} from "../lib/vsc-utils";
+import {
   getNearestInterface,
   getPositionOfLineAndCharacter,
+  createProgramAndGetSourceFile,
+  getDocumentationCommentAsString,
   getTypeOfSymbolAtLocationAsString,
 } from "../lib/ts-utils";
+import { ExtensionContext, window } from "vscode";
 
-export async function interfaceToTable(this: vscode.ExtensionContext) {
+export async function interfaceToTable(this: ExtensionContext) {
   try {
     const editor = getActiveEditor();
     const { document, selection } = editor;
@@ -34,10 +36,10 @@ export async function interfaceToTable(this: vscode.ExtensionContext) {
     const { members, escapedName } = symbol;
     const docs = getDocumentationCommentAsString(checker, symbol);
 
-    const lines = [`# Interface ${escapedName}`];
+    const lines = [`# Interface ${escapedName}\n`];
 
     if (docs) {
-      lines.push(docs);
+      lines.push(`${docs}\n`);
     }
 
     if (members) {
@@ -50,8 +52,15 @@ export async function interfaceToTable(this: vscode.ExtensionContext) {
       });
     }
 
-    console.log(lines.join("\n"));
+    const markdownText = lines.join("\n");
+
+    await writeAndOpenMarkdownDocument(
+      document,
+      escapedName as string,
+      markdownText
+    );
   } catch (error) {
     console.log(error);
+    window.showWarningMessage(error.stack);
   }
 }
