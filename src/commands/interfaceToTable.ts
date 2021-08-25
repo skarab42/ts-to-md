@@ -5,7 +5,7 @@ import {
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
-import { ExtensionContext, window } from "vscode";
+import { ExtensionContext, window, env } from "vscode";
 import ts from "typescript";
 
 interface interfaceDef {
@@ -95,7 +95,8 @@ export async function interfaceToTable(this: ExtensionContext) {
       markdownText += `| ${values.join(" | ")} |\n`;
     });
 
-    console.log(markdownText);
+    env.clipboard.writeText(markdownText);
+    window.showInformationMessage("Interface definition copied to clipboard");
   } catch (error) {
     console.log(error);
     window.showWarningMessage(error.stack);
