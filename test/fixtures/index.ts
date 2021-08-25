@@ -18,6 +18,10 @@ interface B extends A {
   enabled?: boolean;
 }
 
+interface BB extends B {
+  plop: string;
+}
+
 interface T {
   do(arg: string): void;
 }
@@ -39,7 +43,13 @@ interface F extends Omit<E, "test1"> {
  * Options de mon super plugin....
  */
 interface Options extends C, D, T, T2, F {
+  // plop
   moreOptions: string[];
+  /* prout */
   prop1: string | undefined;
+  /**
+   * kapoueeee
+   * @default "pouet"
+   */
   prop2?: string;
 }

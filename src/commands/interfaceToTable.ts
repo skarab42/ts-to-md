@@ -20,8 +20,9 @@ interface interfaceDef {
 interface InterfaceProp {
   name: string;
   type: string;
-  desc?: string;
+  docs: string;
   optional: boolean;
+  defaultValue?: string;
 }
 
 export async function interfaceToTable(this: ExtensionContext) {
@@ -45,19 +46,28 @@ export async function interfaceToTable(this: ExtensionContext) {
 
     const intDef: interfaceDef = {
       name: type.symbol.escapedName.toString(),
-      docs,
       props: [],
+      docs,
     };
 
     for (const prop of type.getProperties()) {
       const declaration = prop.valueDeclaration || prop.declarations?.[0];
       const propType = checker.getTypeOfSymbolAtLocation(prop, declaration!);
       const optional = (prop.flags & ts.SymbolFlags.Optional) !== 0;
+      const docs = getDocumentationCommentAsString(checker, prop);
+      const jsDocs = prop.getJsDocTags();
+
+      const defaultTag = jsDocs.find((tag) =>
+        ["defaultvalue", "default"].includes(tag.name)
+      );
+      const defaultValue = defaultTag && defaultTag?.text?.[0]?.text;
 
       intDef.props.push({
         name: prop.getName(),
         type: checker.typeToString(propType),
+        defaultValue,
         optional,
+        docs,
       });
     }
 
@@ -68,7 +78,7 @@ export async function interfaceToTable(this: ExtensionContext) {
     }
 
     intDef.props.forEach((prop) => {
-      markdownText += `${prop.name} - ${prop.type} - ${prop.optional}\n`;
+      markdownText += `${prop.name} - ${prop.type} - ${prop.optional} - ${prop.docs}\n`;
     });
 
     console.log(markdownText);
