@@ -3,7 +3,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "outDir": "dist",
-    "target": "es2015",
+    "target": "esnext",
     // Basic Options
     "checkJs": true,
     // "rootDir": "src",
