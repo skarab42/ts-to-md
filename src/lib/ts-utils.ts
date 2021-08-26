@@ -42,20 +42,24 @@ function createVirtualFS(
 
 function createCompilerHost(virtualFS: VirtualFS): ts.CompilerHost {
   return {
-    getSourceFile: (fileName: string) => virtualFS.get(fileName),
-    getDefaultLibFileName: () => "",
-    writeFile: () => {},
-    getCurrentDirectory: () => "/",
-    getDirectories: () => [],
+    getSourceFile: (fileName: string) => {
+      console.log(">>>", fileName);
+      return virtualFS.get(fileName);
+    },
     fileExists: (fileName: string) => virtualFS.has(fileName),
-    readFile: (fileName: string) =>
-      virtualFS.has(fileName)
-        ? virtualFS.get(fileName)!.getFullText()
-        : undefined,
     getCanonicalFileName: (fileName: string) => fileName,
-    useCaseSensitiveFileNames: () => true,
+    readFile: (fileName: string) => {
+      return virtualFS.has(fileName)
+        ? virtualFS.get(fileName)!.getFullText()
+        : undefined;
+    },
+    writeFile: () => {},
     getNewLine: () => "\n",
+    getDirectories: () => [],
+    getCurrentDirectory: () => "/",
+    getDefaultLibFileName: () => "",
     getEnvironmentVariable: () => "",
+    useCaseSensitiveFileNames: () => true,
   };
 }
 
@@ -70,6 +74,9 @@ export function createProgramAndGetSourceFile(
   const compilerHost = createCompilerHost(virtualFS);
   const program = ts.createProgram([fileName], options ?? {}, compilerHost);
   const checker = program.getTypeChecker();
+
+  const diagnostics = program.getGlobalDiagnostics();
+  console.log({ diagnostics });
 
   return { program, checker, sourceFile: virtualFS.get(fileName)! };
 }
@@ -116,19 +123,4 @@ export function getDocumentationCommentAsString(
   symbol: ts.Symbol
 ): string {
   return ts.displayPartsToString(symbol.getDocumentationComment(checker));
-}
-
-export function getTypeOfSymbolAtLocationAsString(
-  checker: ts.TypeChecker,
-  symbol: ts.Symbol
-): string {
-  const declaration = symbol.valueDeclaration;
-
-  if (!declaration) {
-    throw new Error("Undefined declaration");
-  }
-
-  return checker.typeToString(
-    checker.getTypeOfSymbolAtLocation(symbol, declaration)
-  );
 }

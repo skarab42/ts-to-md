@@ -47,6 +47,8 @@ export async function interfaceToTable(this: ExtensionContext) {
       docs,
     };
 
+    console.log(type.getProperties());
+
     for (const prop of type.getProperties()) {
       const declaration = prop.valueDeclaration || prop.declarations?.[0];
       const propType = checker.getTypeOfSymbolAtLocation(prop, declaration!);
