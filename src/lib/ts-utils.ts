@@ -1,5 +1,6 @@
 import path from "path";
 import glob from "glob";
+import { existsSync, readFileSync } from "fs";
 import { getTokenAtPosition } from "tsutils";
 import {
   Symbol,
@@ -15,8 +16,8 @@ import {
   InterfaceDeclaration,
   isInterfaceDeclaration,
   getPositionOfLineAndCharacter,
+  sys,
 } from "typescript";
-import { readFileSync } from "fs";
 
 interface ProgramAndSourceFile {
   program: Program;
@@ -32,6 +33,9 @@ interface SelectionStart {
 type VirtualFS = Map<string, SourceFile>;
 type FSEntry = { fileName: string; text: string };
 
+const libFilesVirtualFS: VirtualFS = new Map();
+const defaultLibFileNames: Set<string> = new Set();
+
 function posixPath(input: string): string {
   return input.split(path.sep).join(path.posix.sep);
 }
@@ -42,6 +46,24 @@ function forceTsExtension(input: string): string {
   }
 
   return input;
+}
+
+function getDefaultLibVirtualFS() {
+  if (libFilesVirtualFS.size > 0) {
+    return libFilesVirtualFS;
+  }
+
+  const cwd = path.dirname(sys.getExecutingFilePath());
+
+  return createVirtualFS(
+    glob.sync("lib.*.d.ts", { cwd }).map((fileName) => {
+      defaultLibFileNames.add(fileName);
+      return {
+        fileName,
+        text: readFileSync(path.join(cwd, fileName), "utf-8"),
+      };
+    })
+  );
 }
 
 function createVirtualFS(
@@ -59,54 +81,50 @@ function createVirtualFS(
 function createCompilerHost(virtualFS: VirtualFS): CompilerHost {
   return {
     getSourceFile: (fileName: string) => {
-      console.log(">>>", fileName);
+      console.log("> GET:", fileName);
       return virtualFS.get(fileName);
     },
-    fileExists: (fileName: string) => virtualFS.has(fileName),
-    getCanonicalFileName: (fileName: string) => fileName,
-    readFile: (fileName: string) => {
-      return virtualFS.has(fileName)
-        ? virtualFS.get(fileName)!.getFullText()
-        : undefined;
+    fileExists: (fileName: string) => {
+      console.log("> EXISTS:", fileName);
+      if (virtualFS.has(fileName)) {
+        return true;
+      }
+
+      if (existsSync(fileName)) {
+        const target = ScriptTarget.ESNext;
+        const text = readFileSync(fileName, "utf-8");
+        virtualFS.set(fileName, createSourceFile(fileName, text, target));
+        return true;
+      }
+
+      return false;
     },
+    getCanonicalFileName: (fileName: string) => fileName,
+    readFile: () => "",
     writeFile: () => {},
     getNewLine: () => "\n",
     getDirectories: () => [],
     getCurrentDirectory: () => "/",
-    getDefaultLibFileName: () => "",
     getEnvironmentVariable: () => "",
     useCaseSensitiveFileNames: () => true,
+    getDefaultLibFileName: () => "lib.d.ts",
   };
 }
-
-const libFileNames: string[] = [];
-const libFiles: FSEntry[] = glob
-  .sync("**/node_modules/typescript/lib/lib.*.d.ts")
-  .map((fileName) => {
-    const shortFileName = path.basename(fileName);
-    libFileNames.push(shortFileName);
-    return {
-      fileName: shortFileName,
-      text: readFileSync(fileName, "utf-8"),
-    };
-  });
-
-console.log({ libFiles });
 
 export function createProgramAndGetSourceFile(
   fileName: string,
   text: string,
   options?: CompilerOptions
 ): ProgramAndSourceFile {
-  // const program = createProgram([fileName], options ?? {});
-  // const sourceFile = program.getSourceFile(fileName);
-
   fileName = forceTsExtension(posixPath(fileName));
 
-  const virtualFS = createVirtualFS([...libFiles, { fileName, text }]);
+  const virtualFS = new Map([
+    ...getDefaultLibVirtualFS(),
+    ...createVirtualFS([{ fileName, text }]),
+  ]);
   const compilerHost = createCompilerHost(virtualFS);
   const program = createProgram(
-    [...libFileNames, fileName],
+    [...defaultLibFileNames, fileName],
     options ?? {},
     compilerHost
   );
@@ -116,7 +134,7 @@ export function createProgramAndGetSourceFile(
 
   const files = program.getSourceFiles();
   const compilerOptions = program.getCompilerOptions();
-  const diagnostics = program.getGlobalDiagnostics();
+  const diagnostics = program.getSemanticDiagnostics();
   console.log({ program, files, compilerOptions, diagnostics });
 
   // --------
