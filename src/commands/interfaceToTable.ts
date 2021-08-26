@@ -3,7 +3,6 @@ import { getActiveEditor } from "../lib/vsc-utils";
 import { ExtensionContext, window, env } from "vscode";
 import {
   getNearestInterface,
-  getPositionOfLineAndCharacter,
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
@@ -31,8 +30,7 @@ export async function interfaceToTable(this: ExtensionContext) {
       document.getText()
     );
 
-    const position = getPositionOfLineAndCharacter(sourceFile, selection.start);
-    const nearestInterface = getNearestInterface(sourceFile, position);
+    const nearestInterface = getNearestInterface(sourceFile, selection.start);
 
     if (!nearestInterface) {
       return;

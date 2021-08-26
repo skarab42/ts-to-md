@@ -1,11 +1,25 @@
 import path from "path";
-import ts from "typescript";
-import * as tsutils from "tsutils";
+import { getTokenAtPosition } from "tsutils";
+import {
+  Symbol,
+  Program,
+  SourceFile,
+  TypeChecker,
+  CompilerHost,
+  ScriptTarget,
+  createProgram,
+  CompilerOptions,
+  createSourceFile,
+  displayPartsToString,
+  InterfaceDeclaration,
+  isInterfaceDeclaration,
+  getPositionOfLineAndCharacter,
+} from "typescript";
 
 interface ProgramAndSourceFile {
-  program: ts.Program;
-  sourceFile: ts.SourceFile;
-  checker: ts.TypeChecker;
+  program: Program;
+  sourceFile: SourceFile;
+  checker: TypeChecker;
 }
 
 interface SelectionStart {
@@ -13,7 +27,7 @@ interface SelectionStart {
   character: number;
 }
 
-type VirtualFS = Map<string, ts.SourceFile>;
+type VirtualFS = Map<string, SourceFile>;
 type FSEntry = { fileName: string; text: string };
 
 function posixPath(input: string): string {
@@ -30,17 +44,17 @@ function forceTsExtension(input: string): string {
 
 function createVirtualFS(
   entries: FSEntry[],
-  target: ts.ScriptTarget = ts.ScriptTarget.ESNext
+  target: ScriptTarget = ScriptTarget.ESNext
 ): VirtualFS {
   return new Map(
     entries.map(({ fileName, text }) => [
       fileName,
-      ts.createSourceFile(fileName, text, target),
+      createSourceFile(fileName, text, target),
     ])
   );
 }
 
-function createCompilerHost(virtualFS: VirtualFS): ts.CompilerHost {
+function createCompilerHost(virtualFS: VirtualFS): CompilerHost {
   return {
     getSourceFile: (fileName: string) => {
       console.log(">>>", fileName);
@@ -66,13 +80,13 @@ function createCompilerHost(virtualFS: VirtualFS): ts.CompilerHost {
 export function createProgramAndGetSourceFile(
   fileName: string,
   text: string,
-  options?: ts.CompilerOptions
+  options?: CompilerOptions
 ): ProgramAndSourceFile {
   fileName = forceTsExtension(posixPath(fileName));
 
   const virtualFS = createVirtualFS([{ fileName, text }]);
   const compilerHost = createCompilerHost(virtualFS);
-  const program = ts.createProgram([fileName], options ?? {}, compilerHost);
+  const program = createProgram([fileName], options ?? {}, compilerHost);
   const checker = program.getTypeChecker();
 
   const diagnostics = program.getGlobalDiagnostics();
@@ -81,46 +95,40 @@ export function createProgramAndGetSourceFile(
   return { program, checker, sourceFile: virtualFS.get(fileName)! };
 }
 
-export function getPositionOfLineAndCharacter(
-  sourceFile: ts.SourceFileLike,
-  { line, character }: SelectionStart
-): number {
-  return ts.getPositionOfLineAndCharacter(sourceFile, line, character);
-}
-
-export function getTokenAtPosition(
-  sourceFile: ts.SourceFile,
+function getNearestInterfaceFromPosition(
+  sourceFile: SourceFile,
   position: number
-): ts.Node {
-  const token = tsutils.getTokenAtPosition(sourceFile, position);
+): InterfaceDeclaration | null {
+  if (position < 0) {
+    return null;
+  }
+
+  const token = getTokenAtPosition(sourceFile, position);
 
   if (!token) {
     throw new Error(`No token found at ${sourceFile.fileName}:${position}`);
   }
 
-  return token;
+  if (token.parent && isInterfaceDeclaration(token.parent)) {
+    return token.parent;
+  }
+
+  return getNearestInterfaceFromPosition(sourceFile, position - 1);
 }
 
 export function getNearestInterface(
-  sourceFile: ts.SourceFile,
-  position: number
-): ts.InterfaceDeclaration | null {
-  if (position < 0) {
-    return null;
-  }
-
-  const { parent } = getTokenAtPosition(sourceFile, position);
-
-  if (parent && tsutils.isInterfaceDeclaration(parent)) {
-    return parent;
-  }
-
-  return getNearestInterface(sourceFile, position - 1);
+  sourceFile: SourceFile,
+  { line, character }: SelectionStart
+): InterfaceDeclaration | null {
+  return getNearestInterfaceFromPosition(
+    sourceFile,
+    getPositionOfLineAndCharacter(sourceFile, line, character)
+  );
 }
 
 export function getDocumentationCommentAsString(
-  checker: ts.TypeChecker,
-  symbol: ts.Symbol
+  checker: TypeChecker,
+  symbol: Symbol
 ): string {
-  return ts.displayPartsToString(symbol.getDocumentationComment(checker));
+  return displayPartsToString(symbol.getDocumentationComment(checker));
 }
