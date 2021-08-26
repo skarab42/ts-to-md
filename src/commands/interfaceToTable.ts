@@ -1,12 +1,12 @@
+import { SymbolFlags } from "typescript";
 import { getActiveEditor } from "../lib/vsc-utils";
+import { ExtensionContext, window, env } from "vscode";
 import {
   getNearestInterface,
   getPositionOfLineAndCharacter,
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
-import { ExtensionContext, window, env } from "vscode";
-import ts from "typescript";
 
 interface interfaceDef {
   name: string;
@@ -26,8 +26,9 @@ export async function interfaceToTable(this: ExtensionContext) {
   try {
     const editor = getActiveEditor();
     const { document, selection } = editor;
-    const { program, sourceFile } = createProgramAndGetSourceFile(
-      document.fileName
+    const { checker, sourceFile } = createProgramAndGetSourceFile(
+      document.fileName,
+      document.getText()
     );
 
     const position = getPositionOfLineAndCharacter(sourceFile, selection.start);
@@ -37,7 +38,6 @@ export async function interfaceToTable(this: ExtensionContext) {
       return;
     }
 
-    const checker = program.getTypeChecker();
     const type = checker.getTypeAtLocation(nearestInterface.name);
     const docs = getDocumentationCommentAsString(checker, type.symbol);
 
@@ -50,7 +50,7 @@ export async function interfaceToTable(this: ExtensionContext) {
     for (const prop of type.getProperties()) {
       const declaration = prop.valueDeclaration || prop.declarations?.[0];
       const propType = checker.getTypeOfSymbolAtLocation(prop, declaration!);
-      const optional = (prop.flags & ts.SymbolFlags.Optional) !== 0;
+      const optional = (prop.flags & SymbolFlags.Optional) !== 0;
       const docs = getDocumentationCommentAsString(checker, prop);
       const jsDocs = prop.getJsDocTags();
 

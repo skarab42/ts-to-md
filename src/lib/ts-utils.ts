@@ -1,28 +1,77 @@
+import path from "path";
 import ts from "typescript";
 import * as tsutils from "tsutils";
 
-export interface ProgramAndSourceFile {
+interface ProgramAndSourceFile {
   program: ts.Program;
   sourceFile: ts.SourceFile;
+  checker: ts.TypeChecker;
 }
 
-export interface SelectionStart {
+interface SelectionStart {
   line: number;
   character: number;
 }
 
-export function createProgramAndGetSourceFile(
-  fileName: string,
-  options?: ts.CompilerOptions
-): ProgramAndSourceFile {
-  const program = ts.createProgram([fileName], options ?? {});
-  const sourceFile = program.getSourceFile(fileName);
+type VirtualFS = Map<string, ts.SourceFile>;
+type FSEntry = { fileName: string; text: string };
 
-  if (!sourceFile) {
-    throw new Error(`Source file not found: ${fileName}`);
+function posixPath(input: string): string {
+  return input.split(path.sep).join(path.posix.sep);
+}
+
+function forceTsExtension(input: string): string {
+  if (![".ts", ".tsx"].includes(path.extname(input))) {
+    return `${input}.ts`;
   }
 
-  return { program, sourceFile };
+  return input;
+}
+
+function createVirtualFS(
+  entries: FSEntry[],
+  target: ts.ScriptTarget = ts.ScriptTarget.ESNext
+): VirtualFS {
+  return new Map(
+    entries.map(({ fileName, text }) => [
+      fileName,
+      ts.createSourceFile(fileName, text, target),
+    ])
+  );
+}
+
+function createCompilerHost(virtualFS: VirtualFS): ts.CompilerHost {
+  return {
+    getSourceFile: (fileName: string) => virtualFS.get(fileName),
+    getDefaultLibFileName: () => "",
+    writeFile: () => {},
+    getCurrentDirectory: () => "/",
+    getDirectories: () => [],
+    fileExists: (fileName: string) => virtualFS.has(fileName),
+    readFile: (fileName: string) =>
+      virtualFS.has(fileName)
+        ? virtualFS.get(fileName)!.getFullText()
+        : undefined,
+    getCanonicalFileName: (fileName: string) => fileName,
+    useCaseSensitiveFileNames: () => true,
+    getNewLine: () => "\n",
+    getEnvironmentVariable: () => "",
+  };
+}
+
+export function createProgramAndGetSourceFile(
+  fileName: string,
+  text: string,
+  options?: ts.CompilerOptions
+): ProgramAndSourceFile {
+  fileName = forceTsExtension(posixPath(fileName));
+
+  const virtualFS = createVirtualFS([{ fileName, text }]);
+  const compilerHost = createCompilerHost(virtualFS);
+  const program = ts.createProgram([fileName], options ?? {}, compilerHost);
+  const checker = program.getTypeChecker();
+
+  return { program, checker, sourceFile: virtualFS.get(fileName)! };
 }
 
 export function getPositionOfLineAndCharacter(
