@@ -17,12 +17,14 @@ import {
   isInterfaceDeclaration,
   getPositionOfLineAndCharacter,
   sys,
+  getLineAndCharacterOfPosition,
 } from "typescript";
 
 interface ProgramAndSourceFile {
   program: Program;
   sourceFile: SourceFile;
   checker: TypeChecker;
+  warnings: string[];
 }
 
 interface SelectionStart {
@@ -78,26 +80,27 @@ function createVirtualFS(
   );
 }
 
-function createCompilerHost(virtualFS: VirtualFS): CompilerHost {
+function createCompilerHost(
+  virtualFS: VirtualFS,
+  target: ScriptTarget = ScriptTarget.ESNext
+): CompilerHost {
   return {
-    getSourceFile: (fileName: string) => {
-      console.log("> GET:", fileName);
-      return virtualFS.get(fileName);
-    },
+    getSourceFile: (fileName: string) => virtualFS.get(fileName),
     fileExists: (fileName: string) => {
-      console.log("> EXISTS:", fileName);
       if (virtualFS.has(fileName)) {
         return true;
       }
 
-      if (existsSync(fileName)) {
-        const target = ScriptTarget.ESNext;
-        const text = readFileSync(fileName, "utf-8");
-        virtualFS.set(fileName, createSourceFile(fileName, text, target));
-        return true;
+      if (!existsSync(fileName)) {
+        return false;
       }
 
-      return false;
+      virtualFS.set(
+        fileName,
+        createSourceFile(fileName, readFileSync(fileName, "utf-8"), target)
+      );
+
+      return true;
     },
     getCanonicalFileName: (fileName: string) => fileName,
     readFile: () => "",
@@ -111,37 +114,53 @@ function createCompilerHost(virtualFS: VirtualFS): CompilerHost {
   };
 }
 
+function getWarnings(program: Program, virtualFS: VirtualFS): string[] {
+  return program
+    .getSemanticDiagnostics()
+    .filter((entry) => {
+      const fileName = entry.file?.fileName;
+      return (
+        fileName &&
+        !defaultLibFileNames.has(fileName) &&
+        virtualFS.has(fileName)
+      );
+    })
+    .map((entry) => {
+      let message = entry.messageText;
+      if (Array.isArray(message)) {
+        message = message.join("\n");
+      }
+      const file = entry.file!;
+      const fileName = file.fileName;
+      const position = entry.start ?? 0;
+      const { line, character } = getLineAndCharacterOfPosition(file, position);
+
+      return `${message} Location: ${fileName} [${line}:${character}]`;
+    });
+}
+
 export function createProgramAndGetSourceFile(
   fileName: string,
   text: string,
-  options?: CompilerOptions
+  options: CompilerOptions = {}
 ): ProgramAndSourceFile {
   fileName = forceTsExtension(posixPath(fileName));
 
+  const target = ScriptTarget.ESNext;
+  const rootNames = [...defaultLibFileNames, fileName];
+
   const virtualFS = new Map([
     ...getDefaultLibVirtualFS(),
-    ...createVirtualFS([{ fileName, text }]),
+    ...createVirtualFS([{ fileName, text }], target),
   ]);
-  const compilerHost = createCompilerHost(virtualFS);
-  const program = createProgram(
-    [...defaultLibFileNames, fileName],
-    options ?? {},
-    compilerHost
-  );
-  const sourceFile = virtualFS.get(fileName);
 
-  // --------
-
-  const files = program.getSourceFiles();
-  const compilerOptions = program.getCompilerOptions();
-  const diagnostics = program.getSemanticDiagnostics();
-  console.log({ program, files, compilerOptions, diagnostics });
-
-  // --------
-
+  const compilerHost = createCompilerHost(virtualFS, target);
+  const program = createProgram(rootNames, options, compilerHost);
+  const warnings = getWarnings(program, virtualFS);
+  const sourceFile = virtualFS.get(fileName)!;
   const checker = program.getTypeChecker();
 
-  return { program, checker, sourceFile: sourceFile! };
+  return { program, warnings, sourceFile, checker };
 }
 
 function getNearestInterfaceFromPosition(
