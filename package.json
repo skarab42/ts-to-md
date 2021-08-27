@@ -19,6 +19,11 @@
         "title": "Interface to table",
         "command": "ts-to-md.interfaceToTable",
         "category": "TS Definitions to Markdown"
+      },
+      {
+        "title": "Type to table",
+        "command": "ts-to-md.typeToTable",
+        "category": "TS Definitions to Markdown"
       }
     ],
     "menus": {
@@ -26,11 +31,20 @@
         {
           "command": "ts-to-md.interfaceToTable",
           "when": "editorLangId == typescript"
+        },
+        {
+          "command": "ts-to-md.typeToTable",
+          "when": "editorLangId == typescript"
         }
       ],
       "editor/context": [
         {
           "command": "ts-to-md.interfaceToTable",
+          "group": "9_cutcopypaste",
+          "when": "editorTextFocus && editorLangId == typescript"
+        },
+        {
+          "command": "ts-to-md.typeToTable",
           "group": "9_cutcopypaste",
           "when": "editorTextFocus && editorLangId == typescript"
         }

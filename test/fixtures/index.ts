@@ -1,6 +1,17 @@
 import { C, D } from "./types";
 
+/** Prop... */
 type Id = number;
+
+type Prout = {
+  name: string;
+  power: number;
+};
+
+interface Prout2 {}
+
+/** Yhouououou */
+type Roger = A & { plop: boolean };
 
 interface A {
   id: Id | boolean | string;
@@ -52,4 +63,9 @@ interface Options extends C, D, T, T2, F {
    * @default "pouet"
    */
   prop2?: string;
+}
+
+interface KeyPair<T, U> {
+  key: T;
+  value: U;
 }

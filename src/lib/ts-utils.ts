@@ -17,7 +17,9 @@ import {
   displayPartsToString,
   InterfaceDeclaration,
   isInterfaceDeclaration,
+  isTypeAliasDeclaration,
   getPositionOfLineAndCharacter,
+  TypeAliasDeclaration,
 } from "typescript";
 
 interface ProgramAndSourceFile {
@@ -177,4 +179,39 @@ export function getDocumentationCommentAsString(
   symbol: Symbol
 ): string {
   return displayPartsToString(symbol.getDocumentationComment(checker));
+}
+
+function getNearestTypeFromPosition(
+  sourceFile: SourceFile,
+  position: number
+): TypeAliasDeclaration | InterfaceDeclaration | null {
+  if (position < 0) {
+    return null;
+  }
+
+  const token = getTokenAtPosition(sourceFile, position);
+
+  if (!token) {
+    throw new Error(`No token found at ${sourceFile.fileName}:${position}`);
+  }
+
+  if (
+    token.parent &&
+    (isTypeAliasDeclaration(token.parent) ||
+      isInterfaceDeclaration(token.parent))
+  ) {
+    return token.parent;
+  }
+
+  return getNearestTypeFromPosition(sourceFile, position - 1);
+}
+
+export function getNearestType(
+  sourceFile: SourceFile,
+  { line, character }: SelectionStart
+): TypeAliasDeclaration | InterfaceDeclaration | null {
+  return getNearestTypeFromPosition(
+    sourceFile,
+    getPositionOfLineAndCharacter(sourceFile, line, character)
+  );
 }
