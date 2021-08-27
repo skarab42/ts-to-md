@@ -33,7 +33,7 @@ export async function definitionToTable(this: ExtensionContext) {
 
     if (diagnostics.length) {
       window.showWarningMessage(
-        "Could not generate definitions for your interface due to type-checking issues." +
+        "Could not generate definitions for your type/interface due to type-checking issues." +
           "Please fix your code TypeScript errors and try again."
       );
       return;
@@ -100,7 +100,7 @@ export async function definitionToTable(this: ExtensionContext) {
     }
 
     env.clipboard.writeText(toMarkdownTable(defs));
-    window.showInformationMessage("Interface definition copied to clipboard");
+    window.showInformationMessage("Markdown definition copied to clipboard");
   } catch (error) {
     console.log(error);
     window.showWarningMessage(error.stack);
