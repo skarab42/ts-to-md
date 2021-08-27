@@ -3,9 +3,11 @@ import glob from "glob";
 import { existsSync, readFileSync } from "fs";
 import { getTokenAtPosition } from "tsutils";
 import {
+  sys,
   Symbol,
   Program,
   SourceFile,
+  Diagnostic,
   TypeChecker,
   CompilerHost,
   ScriptTarget,
@@ -16,15 +18,14 @@ import {
   InterfaceDeclaration,
   isInterfaceDeclaration,
   getPositionOfLineAndCharacter,
-  sys,
-  getLineAndCharacterOfPosition,
+  // getLineAndCharacterOfPosition,
 } from "typescript";
 
 interface ProgramAndSourceFile {
   program: Program;
   sourceFile: SourceFile;
   checker: TypeChecker;
-  warnings: string[];
+  diagnostics: readonly Diagnostic[];
 }
 
 interface SelectionStart {
@@ -114,36 +115,42 @@ function createCompilerHost(
   };
 }
 
-function getWarnings(program: Program, virtualFS: VirtualFS): string[] {
-  return program
-    .getSemanticDiagnostics()
-    .filter((entry) => {
-      const fileName = entry.file?.fileName;
-      return (
-        fileName &&
-        !defaultLibFileNames.has(fileName) &&
-        virtualFS.has(fileName)
-      );
-    })
-    .map((entry) => {
-      let message = entry.messageText;
-      if (Array.isArray(message)) {
-        message = message.join("\n");
-      }
-      const file = entry.file!;
-      const fileName = file.fileName;
-      const position = entry.start ?? 0;
-      const { line, character } = getLineAndCharacterOfPosition(file, position);
+// function getSemanticDiagnosticsWithoutDefaultLib(
+//   program: Program,
+//   virtualFS: VirtualFS
+// ): readonly Diagnostic[] {
+//   const diags = program.getSemanticDiagnostics();
+//   console.log({ diags });
 
-      return `${message} Location: ${fileName} [${line}:${character}]`;
-    });
-}
+//   return diags.filter((entry) => {
+//     const fileName = entry.file?.fileName;
+//     return (
+//       fileName && !defaultLibFileNames.has(fileName) && virtualFS.has(fileName)
+//     );
+//   });
+//   // .map((entry) => {
+//   //   let message = entry.messageText;
+//   //   if (Array.isArray(message)) {
+//   //     message = message.join("\n");
+//   //   }
+//   //   const file = entry.file!;
+//   //   const fileName = file.fileName;
+//   //   const position = entry.start ?? 0;
+//   //   const { line, character } = getLineAndCharacterOfPosition(file, position);
+
+//   //   return `${message} Location: ${fileName} [${line}:${character}]`;
+//   // });
+// }
 
 export function createProgramAndGetSourceFile(
   fileName: string,
   text: string,
   options: CompilerOptions = {}
 ): ProgramAndSourceFile {
+  options.traceResolution = true;
+  options.skipLibCheck = true;
+  options.skipDefaultLibCheck = true;
+
   fileName = forceTsExtension(posixPath(fileName));
 
   const target = ScriptTarget.ESNext;
@@ -154,13 +161,19 @@ export function createProgramAndGetSourceFile(
     ...createVirtualFS([{ fileName, text }], target),
   ]);
 
+  console.log({ defaultLibFileNames, virtualFS });
+
   const compilerHost = createCompilerHost(virtualFS, target);
   const program = createProgram(rootNames, options, compilerHost);
-  const warnings = getWarnings(program, virtualFS);
+  // const warnings = getWarnings(program, virtualFS);
   const sourceFile = virtualFS.get(fileName)!;
   const checker = program.getTypeChecker();
 
-  return { program, warnings, sourceFile, checker };
+  const diagnostics = program.getSemanticDiagnostics();
+
+  console.log(diagnostics);
+
+  return { program, diagnostics, sourceFile, checker };
 }
 
 function getNearestInterfaceFromPosition(

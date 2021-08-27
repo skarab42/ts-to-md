@@ -1,11 +1,11 @@
-import { SymbolFlags } from "typescript";
-import { getActiveEditor } from "../lib/vsc-utils";
-import { ExtensionContext, window, env } from "vscode";
 import {
   getNearestInterface,
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
+import { SymbolFlags } from "typescript";
+import { getActiveEditor } from "../lib/vsc-utils";
+import { ExtensionContext, window, env } from "vscode";
 
 interface interfaceDef {
   name: string;
@@ -25,10 +25,18 @@ export async function interfaceToTable(this: ExtensionContext) {
   try {
     const editor = getActiveEditor();
     const { document, selection } = editor;
-    const { checker, sourceFile } = createProgramAndGetSourceFile(
+    const { diagnostics, sourceFile, checker } = createProgramAndGetSourceFile(
       document.fileName,
       document.getText()
     );
+
+    if (diagnostics.length) {
+      window.showWarningMessage(
+        "Could not generate definitions for your interface due to type-checking issues." +
+          "Please fix your code TypeScript errors and try again."
+      );
+      // return;
+    }
 
     const nearestInterface = getNearestInterface(sourceFile, selection.start);
 
@@ -44,8 +52,6 @@ export async function interfaceToTable(this: ExtensionContext) {
       props: [],
       docs,
     };
-
-    console.log(type.getProperties());
 
     for (const prop of type.getProperties()) {
       const declaration = prop.valueDeclaration || prop.declarations?.[0];
