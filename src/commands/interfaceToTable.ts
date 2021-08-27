@@ -6,8 +6,9 @@ import {
 import { SymbolFlags } from "typescript";
 import { getActiveEditor } from "../lib/vsc-utils";
 import { ExtensionContext, window, env } from "vscode";
+import { toMarkdownTable } from "../lib/toMarkdownTable";
 
-interface interfaceDef {
+export interface InterfaceDef {
   name: string;
   docs: string;
   props: InterfaceProp[];
@@ -47,7 +48,7 @@ export async function interfaceToTable(this: ExtensionContext) {
     const type = checker.getTypeAtLocation(nearestInterface.name);
     const docs = getDocumentationCommentAsString(checker, type.symbol);
 
-    const intDef: interfaceDef = {
+    const defs: InterfaceDef = {
       name: type.symbol.escapedName.toString(),
       props: [],
       docs,
@@ -65,7 +66,7 @@ export async function interfaceToTable(this: ExtensionContext) {
       );
       const defaultValue = defaultTag && defaultTag?.text?.[0]?.text;
 
-      intDef.props.push({
+      defs.props.push({
         name: prop.getName(),
         type: checker.typeToString(propType),
         defaultValue,
@@ -74,34 +75,7 @@ export async function interfaceToTable(this: ExtensionContext) {
       });
     }
 
-    let markdownText = `# ${intDef.name}\n\n`;
-
-    if (intDef.docs) {
-      markdownText += `${intDef.docs}\n\n`;
-    }
-
-    const labels = ["name", "type", "optional", "default", "description"];
-    const spearators: string[] = Array(labels.length).fill(
-      "-",
-      0,
-      labels.length
-    );
-
-    markdownText += `| ${labels.join(" | ")} |\n`;
-    markdownText += `| ${spearators.join(" | ")} |\n`;
-
-    intDef.props.forEach((prop) => {
-      const values = [
-        prop.name,
-        `\`${prop.type}\``,
-        `\`${prop.optional}\``,
-        prop.defaultValue ?? "n/a",
-        prop.docs,
-      ];
-      markdownText += `| ${values.join(" | ")} |\n`;
-    });
-
-    env.clipboard.writeText(markdownText);
+    env.clipboard.writeText(toMarkdownTable(defs));
     window.showInformationMessage("Interface definition copied to clipboard");
   } catch (error) {
     console.log(error);
