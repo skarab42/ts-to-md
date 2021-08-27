@@ -1,6 +1,6 @@
-import { InterfaceDef } from "../commands/typeToTable";
+import { Definition } from "../commands/definitionToTable";
 
-export function toMarkdownTable(defs: InterfaceDef): string {
+export function toMarkdownTable(defs: Definition): string {
   let markdownText = `# ${defs.name}\n\n`;
 
   if (defs.docs) {

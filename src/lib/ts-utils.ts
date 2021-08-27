@@ -143,37 +143,6 @@ export function createProgramAndGetSourceFile(
   return { program, diagnostics, sourceFile, checker };
 }
 
-function getNearestInterfaceFromPosition(
-  sourceFile: SourceFile,
-  position: number
-): InterfaceDeclaration | null {
-  if (position < 0) {
-    return null;
-  }
-
-  const token = getTokenAtPosition(sourceFile, position);
-
-  if (!token) {
-    throw new Error(`No token found at ${sourceFile.fileName}:${position}`);
-  }
-
-  if (token.parent && isInterfaceDeclaration(token.parent)) {
-    return token.parent;
-  }
-
-  return getNearestInterfaceFromPosition(sourceFile, position - 1);
-}
-
-export function getNearestInterface(
-  sourceFile: SourceFile,
-  { line, character }: SelectionStart
-): InterfaceDeclaration | null {
-  return getNearestInterfaceFromPosition(
-    sourceFile,
-    getPositionOfLineAndCharacter(sourceFile, line, character)
-  );
-}
-
 export function getDocumentationCommentAsString(
   checker: TypeChecker,
   symbol: Symbol
@@ -181,7 +150,7 @@ export function getDocumentationCommentAsString(
   return displayPartsToString(symbol.getDocumentationComment(checker));
 }
 
-function getNearestTypeFromPosition(
+function getNearestDefinitionFromPosition(
   sourceFile: SourceFile,
   position: number
 ): TypeAliasDeclaration | InterfaceDeclaration | null {
@@ -203,14 +172,14 @@ function getNearestTypeFromPosition(
     return token.parent;
   }
 
-  return getNearestTypeFromPosition(sourceFile, position - 1);
+  return getNearestDefinitionFromPosition(sourceFile, position - 1);
 }
 
-export function getNearestType(
+export function getNearestDefinition(
   sourceFile: SourceFile,
   { line, character }: SelectionStart
 ): TypeAliasDeclaration | InterfaceDeclaration | null {
-  return getNearestTypeFromPosition(
+  return getNearestDefinitionFromPosition(
     sourceFile,
     getPositionOfLineAndCharacter(sourceFile, line, character)
   );

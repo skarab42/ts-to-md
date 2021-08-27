@@ -1,5 +1,5 @@
 import {
-  getNearestType,
+  getNearestDefinition,
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
@@ -8,13 +8,13 @@ import { getActiveEditor } from "../lib/vsc-utils";
 import { ExtensionContext, window, env } from "vscode";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
 
-export interface InterfaceDef {
+export interface Definition {
   name: string;
   docs: string;
-  props: InterfaceProp[];
+  props: DefinitionProp[];
 }
 
-interface InterfaceProp {
+interface DefinitionProp {
   name: string;
   type: string;
   docs: string;
@@ -22,7 +22,7 @@ interface InterfaceProp {
   defaultValue?: string;
 }
 
-export async function typeToTable(this: ExtensionContext) {
+export async function definitionToTable(this: ExtensionContext) {
   try {
     const editor = getActiveEditor();
     const { document, selection } = editor;
@@ -39,7 +39,7 @@ export async function typeToTable(this: ExtensionContext) {
       return;
     }
 
-    const nearestType = getNearestType(sourceFile, selection.start);
+    const nearestType = getNearestDefinition(sourceFile, selection.start);
 
     if (!nearestType) {
       return;
@@ -72,7 +72,7 @@ export async function typeToTable(this: ExtensionContext) {
       escapedName = type.aliasSymbol.escapedName;
     }
 
-    const defs: InterfaceDef = {
+    const defs: Definition = {
       name: escapedName.toString(),
       props: [],
       docs,

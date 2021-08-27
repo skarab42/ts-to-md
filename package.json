@@ -16,21 +16,21 @@
   "contributes": {
     "commands": [
       {
-        "title": "Type to table",
-        "command": "ts-to-md.typeToTable",
+        "title": "Definition to markdown table",
+        "command": "ts-to-md.definitionToTable",
         "category": "TS Definitions to Markdown"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "ts-to-md.typeToTable",
+          "command": "ts-to-md.definitionToTable",
           "when": "editorLangId == typescript"
         }
       ],
       "editor/context": [
         {
-          "command": "ts-to-md.typeToTable",
+          "command": "ts-to-md.definitionToTable",
           "group": "9_cutcopypaste",
           "when": "editorTextFocus && editorLangId == typescript"
         }

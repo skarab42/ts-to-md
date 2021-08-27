@@ -1,1 +1,1 @@
-export { typeToTable } from "./typeToTable";
+export { definitionToTable } from "./definitionToTable";
