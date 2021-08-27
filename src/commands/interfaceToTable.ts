@@ -35,7 +35,7 @@ export async function interfaceToTable(this: ExtensionContext) {
         "Could not generate definitions for your interface due to type-checking issues." +
           "Please fix your code TypeScript errors and try again."
       );
-      // return;
+      return;
     }
 
     const nearestInterface = getNearestInterface(sourceFile, selection.start);
