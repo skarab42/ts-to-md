@@ -14,12 +14,16 @@ import {
 import { Definition } from "../commands/definitionToTable";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
 
-export function test(title: string, fn: Mocha.AsyncFunc) {
-  Mocha.test(title, function () {
-    this.timeout(5000);
+export function test(title: string, fn?: Mocha.AsyncFunc) {
+  if (fn) {
+    Mocha.test(title, function () {
+      this.timeout(5000);
 
-    return fn.call(this);
-  });
+      return fn.call(this);
+    });
+  } else {
+    Mocha.test(title);
+  }
 }
 
 export async function withTSEditor(
