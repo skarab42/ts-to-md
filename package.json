@@ -3,7 +3,7 @@
   "displayName": "TypeScript Definitions to Markdown",
   "description": "Export your TypeScript definitions in Mardown format directly in your clipboard ready to past in your README.",
   "version": "1.0.0",
-  "main": "./dist/src/extension.js",
+  "main": "./dist/extension.js",
   "license": "MIT",
   "engines": {
     "vscode": "^1.59.0"
@@ -47,12 +47,17 @@
   },
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "pretest": "yarn build",
+    "test": "node dist/test/runTest.js"
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
+    "@types/mocha": "8.2.2",
     "@types/node": "^16.7.2",
-    "@types/vscode": "^1.59.0"
+    "@types/vscode": "^1.59.0",
+    "mocha": "8.4.0",
+    "vscode-test": "1.6.1"
   },
   "dependencies": {
     "glob": "^7.1.7",

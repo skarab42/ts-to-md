@@ -22,6 +22,8 @@ interface DefinitionProp {
   defaultValue?: string;
 }
 
+export const DEFINITION_TO_TABLE_COMMAND = "ts-to-md.definitionToTable";
+
 export async function definitionToTable(this: ExtensionContext) {
   try {
     const editor = getActiveEditor();
