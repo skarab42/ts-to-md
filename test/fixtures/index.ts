@@ -85,3 +85,19 @@ interface Plop45 {
 interface Plop46 {
   [key: string]: boolean | KeyPair<string, string>;
 }
+
+interface Plop47 {
+  [key: number]: boolean | KeyPair<string, string>;
+}
+
+interface Plop48 {
+  a: boolean;
+  b: boolean;
+  c: boolean;
+}
+
+type Thingy<K extends keyof Plop48> = {
+  [key in K]: number;
+} & { plop: string };
+
+type L = Thingy<keyof Plop48>;
