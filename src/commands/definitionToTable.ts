@@ -3,7 +3,7 @@ import {
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
-import { SymbolFlags } from "typescript";
+import { SignatureKind, SymbolFlags } from "typescript";
 import { getActiveEditor } from "../lib/vsc-utils";
 import { ExtensionContext, window, env } from "vscode";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
@@ -46,9 +46,11 @@ export async function definitionToTable(this: ExtensionContext) {
     }
 
     const type = checker.getTypeAtLocation(nearestType.name);
+    const stringIndex = type.getStringIndexType();
+    const numberIndex = type.getNumberIndexType();
     const props = type.getProperties();
 
-    if (props.length === 0) {
+    if (!stringIndex && !numberIndex && !props.length) {
       window.showWarningMessage(
         "Could not generate markdown for empty definition."
       );
@@ -77,6 +79,17 @@ export async function definitionToTable(this: ExtensionContext) {
       props: [],
       docs,
     };
+
+    if (stringIndex || numberIndex) {
+      const index = stringIndex ?? numberIndex;
+      defs.props.push({
+        name: `[key: ${numberIndex ? "number" : "string"}]`,
+        type: checker.typeToString(index!),
+        defaultValue: undefined,
+        optional: true,
+        docs,
+      });
+    }
 
     for (const prop of props) {
       const declaration = prop.valueDeclaration || prop.declarations?.[0];

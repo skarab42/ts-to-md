@@ -69,3 +69,19 @@ interface KeyPair<T, U> {
   key: T;
   value: U;
 }
+
+// Une interface qui décrit qu'on a toujours les propriétés a, b & c et peut être d'autre propriété.
+// L'output ne contient pas l'index signature
+interface Plop45 {
+  a: boolean;
+  b: boolean;
+  c: boolean;
+  /** Prout... */
+  [key: string]: boolean; // <--- index signature
+}
+
+// Une interface équivalent à un Record<string, boolean>
+// L'output est vide et ne contient pas l'index signature
+interface Plop46 {
+  [key: string]: boolean | KeyPair<string, string>;
+}
