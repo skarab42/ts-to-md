@@ -3,7 +3,7 @@ import {
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
-import { SignatureKind, SymbolFlags } from "typescript";
+import { SymbolFlags } from "typescript";
 import { getActiveEditor } from "../lib/vsc-utils";
 import { ExtensionContext, window, env } from "vscode";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
