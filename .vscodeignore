@@ -7,3 +7,5 @@ src/**
 **/*.map
 **/*.ts
 .github/**
+images/**
+!images/logo.png
