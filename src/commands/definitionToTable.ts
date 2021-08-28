@@ -3,7 +3,7 @@ import {
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
 } from "../lib/ts-utils";
-import { SymbolFlags } from "typescript";
+import { SymbolFlags, isMappedTypeNode } from "typescript";
 import { getActiveEditor } from "../lib/vsc-utils";
 import { ExtensionContext, window, env } from "vscode";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
@@ -85,6 +85,26 @@ export async function definitionToTable(this: ExtensionContext) {
         optional: true,
         docs,
       });
+    }
+
+    if (type.isUnionOrIntersection()) {
+      for (const unionOrIntersectionType of type.types) {
+        if (unionOrIntersectionType.aliasSymbol) {
+          continue;
+        }
+
+        const declaration = unionOrIntersectionType.symbol.declarations?.[0];
+
+        if (declaration && isMappedTypeNode(declaration) && declaration.type) {
+          defs.props.push({
+            name: `[${declaration.typeParameter.getFullText()}]`,
+            type: declaration.type.getText(),
+            defaultValue: undefined,
+            optional: false,
+            docs,
+          });
+        }
+      }
     }
 
     for (const prop of props) {
