@@ -22,6 +22,16 @@
     "onLanguage:typescript"
   ],
   "contributes": {
+    "configuration": {
+      "title": "TypeScript Definitions to Markdown",
+      "properties": {
+        "ts-to-md.typescriptPackagePath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to typescript package."
+        }
+      }
+    },
     "commands": [
       {
         "title": "Definition to markdown table",
