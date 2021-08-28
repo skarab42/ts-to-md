@@ -7,8 +7,12 @@ import {
   withFixtureEditor,
 } from "../utils";
 
+const timeout = 10_000;
+
 suite("Imports", () => {
-  test("should resolve an imported type", async () => {
+  test("should resolve an imported type", async function () {
+    this.timeout(timeout);
+
     return withFixtureEditor(
       "import",
       async () => {
@@ -26,7 +30,9 @@ suite("Imports", () => {
     );
   });
 
-  test("should resolve an imported interface", async () => {
+  test("should resolve an imported interface", async function () {
+    this.timeout(timeout);
+
     return withFixtureEditor(
       "import",
       async () => {
