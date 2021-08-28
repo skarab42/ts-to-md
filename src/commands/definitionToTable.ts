@@ -14,13 +14,15 @@ export interface Definition {
   props: DefinitionProp[];
 }
 
-interface DefinitionProp {
+export interface DefinitionProp {
   name: string;
   type: string;
   docs: string;
   optional: boolean;
   defaultValue?: string;
 }
+
+export const DEFINITION_TO_TABLE_COMMAND = "ts-to-md.definitionToTable";
 
 export async function definitionToTable(this: ExtensionContext) {
   try {

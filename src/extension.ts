@@ -1,13 +1,18 @@
 import * as vscode from "vscode";
-import pkg from "../package.json";
-import * as commands from "./commands";
+
+import {
+  definitionToTable,
+  DEFINITION_TO_TABLE_COMMAND,
+} from "./commands/definitionToTable";
 
 export function activate(context: vscode.ExtensionContext) {
   const { subscriptions } = context;
 
   subscriptions.push(
-    ...Object.entries(commands).map(([name, command]) =>
-      vscode.commands.registerCommand(`${pkg.name}.${name}`, command, context)
+    vscode.commands.registerCommand(
+      DEFINITION_TO_TABLE_COMMAND,
+      definitionToTable,
+      context
     )
   );
 }

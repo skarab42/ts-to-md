@@ -1,1 +1,0 @@
-export { definitionToTable } from "./definitionToTable";
