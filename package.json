@@ -46,8 +46,9 @@
     }
   },
   "scripts": {
-    "build": "tsc",
     "watch": "tsc -w",
+    "clean": "rimraf dist",
+    "build": "yarn clean && tsc",
     "pretest": "yarn build",
     "test": "node dist/test/runTest.js"
   },
@@ -57,6 +58,7 @@
     "@types/node": "^16.7.2",
     "@types/vscode": "^1.59.0",
     "mocha": "8.4.0",
+    "rimraf": "^3.0.2",
     "vscode-test": "1.6.1"
   },
   "dependencies": {
