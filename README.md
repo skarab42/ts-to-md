@@ -1,8 +1,10 @@
 # TypeScript Definitions to Markdown
 
+[![integration](https://github.com/skarab42/ts-to-md/actions/workflows/integration.yml/badge.svg)](https://github.com/skarab42/ts-to-md/actions/workflows/integration.yml)
+
 TypeScript Definitions to Markdown (ts-to-md) is an VS Code extension that help you to export your TypeScript definitions in Mardown format directly in your clipboard ready to past in your README.
 
-![GIF](/images/demo.gif)
+![GIF](https://user-images.githubusercontent.com/62928763/131223948-95c8ce18-400f-43d5-bf05-e6bf60ef5945.gif)
 
 ## Features
 
@@ -20,7 +22,7 @@ _Planned_
 
 ## Installation
 
-Install through VS Code Marketplace: [TypeScript Definitions to Markdown](https://marketplace.visualstudio.com/items?itemName=XXX).
+Install through VS Code Marketplace: [TypeScript Definitions to Markdown](https://marketplace.visualstudio.com/items?itemName=skarab42.ts-to-md).
 
 ## Usage
 
