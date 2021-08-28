@@ -3,13 +3,14 @@ import assert from "assert";
 import {
   commands,
   env,
-  languages,
   Position,
   Selection,
+  TextEditor,
   Uri,
   window,
   workspace,
 } from "vscode";
+import path from "path";
 
 import { Definition } from "../commands/definitionToTable";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
@@ -29,29 +30,31 @@ export function test(title: string, fn?: Mocha.AsyncFunc) {
 export async function withTSEditor(
   content: string,
   run: () => Promise<void>,
-  cursorPosition = new Position(0, 0)
+  cursorPosition?: Position
 ) {
-  const document = await workspace.openTextDocument(
-    Uri.parse("untitled:ts-to-md-test")
-  );
-  await languages.setTextDocumentLanguage(document, "typescript");
-
-  // Add a little bit of delay after changing the document language to TypeScript as the extension is loaded when the
-  // language is changed to TypeScript rather than when the command is activated.
-  await delay(500);
-
-  const editor = await window.showTextDocument(document);
+  const editor = await showEditor(Uri.parse("untitled:ts-to-md-test.ts"));
 
   await editor.edit((editBuilder) => {
     editBuilder.insert(new Position(0, 0), content);
   });
 
-  const selection = new Selection(cursorPosition, cursorPosition);
-  editor.selection = selection;
+  return runAtPosition(editor, run, cursorPosition);
+}
 
-  await run();
+export async function withFixtureEditor(
+  name: string,
+  run: () => Promise<void>,
+  cursorPosition?: Position
+) {
+  // We need the original TypeScript fixtures outside of the dist folder.
+  const fixturePath = path.join(
+    __dirname,
+    `../../src/test/fixtures/${name}.ts`
+  );
 
-  return commands.executeCommand("workbench.action.closeAllEditors");
+  const editor = await showEditor(Uri.parse(`file:${fixturePath}`));
+
+  return runAtPosition(editor, run, cursorPosition);
 }
 
 export async function assertClipboardEqualDefinition(
@@ -85,6 +88,29 @@ export function emptyClipboard() {
 
 export function assertEmptyClipboard() {
   return assertClipboardEqual("");
+}
+
+async function showEditor(uri: Uri): Promise<TextEditor> {
+  const document = await workspace.openTextDocument(uri);
+
+  // Add a little bit of delay after opening a new file with a document language set to TypeScript as the extension is
+  // loaded when the language is changed to TypeScript rather than when the command is activated.
+  await delay(500);
+
+  return window.showTextDocument(document);
+}
+
+async function runAtPosition(
+  editor: TextEditor,
+  run: () => Promise<void>,
+  cursorPosition = new Position(0, 0)
+) {
+  const selection = new Selection(cursorPosition, cursorPosition);
+  editor.selection = selection;
+
+  await run();
+
+  return commands.executeCommand("workbench.action.closeAllEditors");
 }
 
 function delay(timeout: number) {
