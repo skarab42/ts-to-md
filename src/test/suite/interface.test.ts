@@ -197,15 +197,94 @@ suite("Interfaces", () => {
 });
 
 suite("Interface documentation", () => {
-  test("should export an interface documentation");
+  test("should export an interface documentation", () => {
+    const docs = "Test docs";
 
-  test("should export an interface property documentation");
+    return withTSEditor(
+      `/**
+ * ${docs}
+ */
+interface Test { a: string }`,
+      async () => {
+        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
-  test("should export an interface property default value");
+        await assertClipboardEqualDefinition({
+          name: "Test",
+          docs,
+          props: [{ name: "a", type: "string" }],
+        });
+      }
+    );
+  });
 
-  test(
-    "should not export an interface property documentation not matching the JSDoc syntax"
-  );
+  test("should export an interface property documentation", () => {
+    const propDocs = "Test docs";
+
+    return withTSEditor(
+      `interface Test {
+  /**
+   * ${propDocs}
+   */
+  a: string
+}`,
+      async () => {
+        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
+
+        await assertClipboardEqualDefinition({
+          name: "Test",
+          props: [{ name: "a", type: "string", docs: propDocs }],
+        });
+      }
+    );
+  });
+
+  test("should export an interface property default value", () => {
+    const propDocs = "Test docs";
+    const propDefaultValue = "testDefaultValue";
+
+    return withTSEditor(
+      `interface Test {
+  /**
+   * ${propDocs}
+   * @default ${propDefaultValue}
+   */
+  a: string
+}`,
+      async () => {
+        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
+
+        await assertClipboardEqualDefinition({
+          name: "Test",
+          props: [
+            {
+              name: "a",
+              type: "string",
+              docs: propDocs,
+              defaultValue: propDefaultValue,
+            },
+          ],
+        });
+      }
+    );
+  });
+
+  test("should not export an interface property documentation not matching the JSDoc syntax", () => {
+    return withTSEditor(
+      `// Test docs
+interface Test {
+  /* test docs */
+  a: string
+}`,
+      async () => {
+        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
+
+        await assertClipboardEqualDefinition({
+          name: "Test",
+          props: [{ name: "a", type: "string" }],
+        });
+      }
+    );
+  });
 });
 
 suite("Interface errors", () => {
