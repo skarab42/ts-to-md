@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { ExportedTest1, ExportedTest2 } from "./definitions";
 
 type Test1 = { a: string } & ExportedTest1;
