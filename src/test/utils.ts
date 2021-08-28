@@ -79,6 +79,14 @@ async function assertClipboardEqual(expected: string) {
   assert.strictEqual(text, expected);
 }
 
+export function emptyClipboard() {
+  return env.clipboard.writeText("");
+}
+
+export function assertEmptyClipboard() {
+  return assertClipboardEqual("");
+}
+
 function delay(timeout: number) {
   return new Promise<void>((resolve) =>
     setTimeout(() => {

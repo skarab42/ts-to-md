@@ -1,7 +1,13 @@
 import { commands } from "vscode";
 
 import { DEFINITION_TO_TABLE_COMMAND } from "../../commands/definitionToTable";
-import { assertClipboardEqualDefinition, test, withTSEditor } from "../utils";
+import {
+  assertClipboardEqualDefinition,
+  assertEmptyClipboard,
+  emptyClipboard,
+  test,
+  withTSEditor,
+} from "../utils";
 
 suite("Interfaces", () => {
   test("should export a basic interface with a single property", () => {
@@ -288,7 +294,21 @@ interface Test {
 });
 
 suite("Interface errors", () => {
-  test("should not export an empty interface");
+  test("should not export an empty interface", () => {
+    return withTSEditor(`interface Test {}`, async () => {
+      await emptyClipboard();
+      await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
-  test("should not export an interface with invalid TypeScript code");
+      await assertEmptyClipboard();
+    });
+  });
+
+  test("should not export an interface with invalid TypeScript code", () => {
+    return withTSEditor(`interface Test {}; type A`, async () => {
+      await emptyClipboard();
+      await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
+
+      await assertEmptyClipboard();
+    });
+  });
 });
