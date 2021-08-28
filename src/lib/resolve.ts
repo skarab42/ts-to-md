@@ -52,7 +52,7 @@ function globalPathGet(packageManager: PackageManagers): string | undefined {
 export async function resolveGlobalModule(
   moduleName: string,
   uri: Uri
-): Promise<string> {
+): Promise<string | undefined> {
   const ws = workspace.getWorkspaceFolder(uri);
   const packageManager = await commands.executeCommand<"npm" | "pnpm" | "yarn">(
     "npm.packageManager",
@@ -60,7 +60,7 @@ export async function resolveGlobalModule(
   );
 
   if (!packageManager) {
-    return Promise.reject();
+    return;
   }
 
   const resolvedGlobalPackageManagerPath = globalPathGet(packageManager);
@@ -72,11 +72,11 @@ export async function resolveGlobalModule(
     );
 
     if (fs.existsSync(globalModulePath)) {
-      return Promise.resolve(globalModulePath);
+      return globalModulePath;
     }
   }
 
-  return Promise.reject();
+  return;
 }
 
 function resolveLocalModuleRecursive(
@@ -142,6 +142,16 @@ export function resolveLocalModule(
 }
 
 export async function resolveModule(moduleName: string, documentUri: Uri) {
+  const userDefinedPackagePath = workspace
+    .getConfiguration("ts-to-md")
+    .get<string>("typescriptPackagePath");
+
+  if (userDefinedPackagePath && userDefinedPackagePath.length) {
+    return fs.existsSync(userDefinedPackagePath)
+      ? userDefinedPackagePath
+      : undefined;
+  }
+
   let modulePath = resolveLocalModule(moduleName, documentUri);
 
   if (!modulePath) {
