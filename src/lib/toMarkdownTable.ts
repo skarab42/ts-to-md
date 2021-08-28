@@ -18,7 +18,7 @@ export function toMarkdownTable(defs: Definition): string {
       prop.name,
       `\`${escapeMarkdownText(prop.type)}\``,
       `\`${prop.optional}\``,
-      escapeMarkdownText(prop.defaultValue ?? "n/a"),
+      `\`${escapeMarkdownText(prop.defaultValue ?? "n/a")}\``,
       escapeMarkdownText(prop.docs),
     ];
     markdownText += `| ${values.join(" | ")} |\n`;

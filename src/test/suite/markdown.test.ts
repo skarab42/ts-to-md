@@ -101,8 +101,8 @@ function getProp(
     },
     md: `| ${name} | \`${escapeMarkdownText(
       type
-    )}\` | \`${optional}\` | ${escapeMarkdownText(
+    )}\` | \`${optional}\` | \`${escapeMarkdownText(
       prop?.defaultValue ?? "n/a"
-    )} | ${escapeMarkdownText(docs)} |\n`,
+    )}\` | ${escapeMarkdownText(docs)} |\n`,
   };
 }
