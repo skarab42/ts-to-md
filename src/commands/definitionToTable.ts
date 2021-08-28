@@ -14,7 +14,7 @@ export interface Definition {
   props: DefinitionProp[];
 }
 
-interface DefinitionProp {
+export interface DefinitionProp {
   name: string;
   type: string;
   docs: string;
