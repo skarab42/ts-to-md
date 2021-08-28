@@ -16,13 +16,17 @@ export function toMarkdownTable(defs: Definition): string {
   defs.props.forEach((prop) => {
     const values = [
       prop.name,
-      `\`${prop.type}\``,
+      `\`${escapeMarkdownText(prop.type)}\``,
       `\`${prop.optional}\``,
-      prop.defaultValue ?? "n/a",
-      prop.docs,
+      escapeMarkdownText(prop.defaultValue ?? "n/a"),
+      escapeMarkdownText(prop.docs),
     ];
     markdownText += `| ${values.join(" | ")} |\n`;
   });
 
   return markdownText;
+}
+
+export function escapeMarkdownText(text: string): string {
+  return text.replaceAll("|", "\\|");
 }
