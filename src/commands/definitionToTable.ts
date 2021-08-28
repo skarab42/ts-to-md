@@ -70,14 +70,8 @@ export async function definitionToTable(this: ExtensionContext) {
 
     const docs = getDocumentationCommentAsString(checker, symbol);
 
-    let escapedName = symbol.escapedName;
-
-    if (type.aliasSymbol) {
-      escapedName = type.aliasSymbol.escapedName;
-    }
-
     const defs: Definition = {
-      name: escapedName.toString(),
+      name: checker.typeToString(type),
       props: [],
       docs,
     };
