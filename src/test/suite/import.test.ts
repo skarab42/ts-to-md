@@ -1,7 +1,11 @@
 import { commands, Position } from "vscode";
 
 import { DEFINITION_TO_TABLE_COMMAND } from "../../commands/definitionToTable";
-import { assertClipboardEqualDefinition, withFixtureEditor } from "../utils";
+import {
+  assertClipboardEqualDefinition,
+  test,
+  withFixtureEditor,
+} from "../utils";
 
 suite("Imports", () => {
   test("should resolve an imported type", async () => {

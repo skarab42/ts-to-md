@@ -1,10 +1,11 @@
 import assert from "assert";
 
 import type { DefinitionProp } from "../../commands/definitionToTable";
+import { test } from "../utils";
 import { escapeMarkdownText, toMarkdownTable } from "../../lib/toMarkdownTable";
 
 suite("Markdown", () => {
-  test("should properly export a definition with no props", () => {
+  test("should properly export a definition with no props", async () => {
     const name = "Test";
     const docs = "Test doc";
 
@@ -18,7 +19,7 @@ suite("Markdown", () => {
     );
   });
 
-  test("should properly export a definition with multiple props", () => {
+  test("should properly export a definition with multiple props", async () => {
     const name = "Test";
     const { prop: prop1, md: md1 } = getProp(0);
     const { prop: prop2, md: md2 } = getProp(1);
@@ -43,7 +44,7 @@ suite("Markdown", () => {
     );
   });
 
-  test("should escape pipes in the type, description & default value", () => {
+  test("should escape pipes in the type, description & default value", async () => {
     const name = "Test";
     const { prop: prop1, md: md1 } = getProp(0, {
       type: "string | string[]",

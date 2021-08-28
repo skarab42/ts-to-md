@@ -1,7 +1,7 @@
 import { commands } from "vscode";
 
 import { DEFINITION_TO_TABLE_COMMAND } from "../../commands/definitionToTable";
-import { assertClipboardEqualDefinition, withTSEditor } from "../utils";
+import { assertClipboardEqualDefinition, test, withTSEditor } from "../utils";
 
 suite("Types & Interfaces", () => {
   test("should export a type which is the intersection of multiple interfaces", () => {

@@ -5,6 +5,7 @@ import {
   assertClipboardEqualDefinition,
   assertEmptyClipboard,
   emptyClipboard,
+  test,
   withTSEditor,
 } from "../utils";
 
