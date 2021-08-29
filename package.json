@@ -64,7 +64,7 @@
   "dependencies": {
     "glob": "^7.1.7",
     "tsutils": "^3.21.0",
-    "typescript": "^4.3.5"
+    "typescript": "4.3.5"
   },
   "icon": "images/logo.png",
   "galleryBanner": {
