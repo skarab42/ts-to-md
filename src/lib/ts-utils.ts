@@ -20,6 +20,8 @@ import {
   isTypeAliasDeclaration,
   getPositionOfLineAndCharacter,
   TypeAliasDeclaration,
+  InterfaceType,
+  InterfaceTypeWithDeclaredMembers,
 } from "typescript";
 
 interface ProgramAndSourceFile {
@@ -182,5 +184,16 @@ export function getNearestDefinition(
   return getNearestDefinitionFromPosition(
     sourceFile,
     getPositionOfLineAndCharacter(sourceFile, line, character)
+  );
+}
+
+export function isInterfaceTypeWithDeclaredMembers(
+  interfaceType: InterfaceType
+): interfaceType is InterfaceTypeWithDeclaredMembers {
+  return (
+    typeof (interfaceType as InterfaceTypeWithDeclaredMembers)
+      .declaredStringIndexInfo !== "undefined" ||
+    typeof (interfaceType as InterfaceTypeWithDeclaredMembers)
+      .declaredNumberIndexInfo !== "undefined"
   );
 }

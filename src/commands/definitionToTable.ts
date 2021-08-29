@@ -2,6 +2,7 @@ import {
   getNearestDefinition,
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
+  isInterfaceTypeWithDeclaredMembers,
 } from "../lib/ts-utils";
 import { SymbolFlags, isMappedTypeNode } from "typescript";
 import { getActiveEditor } from "../lib/vsc-utils";
@@ -76,15 +77,24 @@ export async function definitionToTable(this: ExtensionContext) {
       docs,
     };
 
-    if (stringIndex || numberIndex) {
-      const index = stringIndex ?? numberIndex;
-      defs.props.push({
-        name: `[key: ${numberIndex ? "number" : "string"}]`,
-        type: checker.typeToString(index!),
-        defaultValue: undefined,
-        optional: true,
-        docs,
-      });
+    if (
+      (stringIndex || numberIndex) &&
+      type.isClassOrInterface() &&
+      isInterfaceTypeWithDeclaredMembers(type)
+    ) {
+      const index =
+        type.declaredStringIndexInfo ?? type.declaredNumberIndexInfo;
+      const parameter = index?.declaration?.parameters[0];
+
+      if (index && parameter) {
+        defs.props.push({
+          name: `[${parameter.getFullText()}]`,
+          type: checker.typeToString(index.type),
+          defaultValue: undefined,
+          optional: true,
+          docs,
+        });
+      }
     }
 
     if (type.isUnionOrIntersection()) {
