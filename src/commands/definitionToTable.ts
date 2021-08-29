@@ -2,8 +2,9 @@ import {
   getNearestDefinition,
   createProgramAndGetSourceFile,
   getDocumentationCommentAsString,
+  isInterfaceTypeWithDeclaredMembers,
 } from "../lib/ts-utils";
-import { SymbolFlags } from "typescript";
+import { SymbolFlags, isMappedTypeNode } from "typescript";
 import { getActiveEditor } from "../lib/vsc-utils";
 import { ExtensionContext, window, env } from "vscode";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
@@ -70,27 +71,50 @@ export async function definitionToTable(this: ExtensionContext) {
 
     const docs = getDocumentationCommentAsString(checker, symbol);
 
-    let escapedName = symbol.escapedName;
-
-    if (type.aliasSymbol) {
-      escapedName = type.aliasSymbol.escapedName;
-    }
-
     const defs: Definition = {
-      name: escapedName.toString(),
+      name: checker.typeToString(type),
       props: [],
       docs,
     };
 
-    if (stringIndex || numberIndex) {
-      const index = stringIndex ?? numberIndex;
-      defs.props.push({
-        name: `[key: ${numberIndex ? "number" : "string"}]`,
-        type: checker.typeToString(index!),
-        defaultValue: undefined,
-        optional: true,
-        docs,
-      });
+    if (
+      (stringIndex || numberIndex) &&
+      type.isClassOrInterface() &&
+      isInterfaceTypeWithDeclaredMembers(type)
+    ) {
+      const index =
+        type.declaredStringIndexInfo ?? type.declaredNumberIndexInfo;
+      const parameter = index?.declaration?.parameters[0];
+
+      if (index && parameter) {
+        defs.props.push({
+          name: `[${parameter.getFullText()}]`,
+          type: checker.typeToString(index.type),
+          defaultValue: undefined,
+          optional: true,
+          docs,
+        });
+      }
+    }
+
+    if (type.isUnionOrIntersection()) {
+      for (const unionOrIntersectionType of type.types) {
+        if (unionOrIntersectionType.aliasSymbol) {
+          continue;
+        }
+
+        const declaration = unionOrIntersectionType.symbol.declarations?.[0];
+
+        if (declaration && isMappedTypeNode(declaration) && declaration.type) {
+          defs.props.push({
+            name: `[${declaration.typeParameter.getFullText()}]`,
+            type: declaration.type.getText(),
+            defaultValue: undefined,
+            optional: false,
+            docs,
+          });
+        }
+      }
     }
 
     for (const prop of props) {

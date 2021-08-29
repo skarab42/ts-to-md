@@ -191,7 +191,7 @@ suite("Interfaces", () => {
         await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
         await assertClipboardEqualDefinition({
-          name: "Test",
+          name: "Test<T, U>",
           props: [
             { name: "key", type: "T" },
             { name: "value", type: "U" },

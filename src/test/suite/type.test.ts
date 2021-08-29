@@ -147,14 +147,79 @@ suite("Types", () => {
     );
   });
 
-  test("should export a mapped type");
+  test("should export a mapped type mapping over a type", () => {
+    return withTSEditor(
+      `type Test = ToNumber<Test1>;
+    type Test1 = { a: string; b: boolean };
+    type ToNumber<T> = {
+      [key in keyof T]: number
+    }`,
+      async () => {
+        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
+
+        await assertClipboardEqualDefinition({
+          name: "ToNumber<Test1>",
+          props: [
+            { name: "a", type: "number" },
+            { name: "b", type: "number" },
+          ],
+        });
+      }
+    );
+  });
+
+  test("should export a mapped type mapping over an interface", () => {
+    return withTSEditor(
+      `type Test<K extends keyof Test1> = {
+      [key in K]: number;
+    };
+    interface Test1 {
+      a: string;
+      b: number;
+    }`,
+      async () => {
+        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
+
+        await assertClipboardEqualDefinition({
+          name: "ToNumber<Test1>",
+          props: [
+            { name: "a", type: "number" },
+            { name: "b", type: "number" },
+          ],
+        });
+      }
+    );
+  });
+
+  test("should export a mapped type mapping over an interface combined with an intersection", () => {
+    return withTSEditor(
+      `type Test<K extends keyof Test1> = {
+    [key in K]: number;
+  } & { c: string };
+  interface Test1 {
+    a: string;
+    b: number;
+  }`,
+      async () => {
+        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
+
+        await assertClipboardEqualDefinition({
+          name: "Test<K>",
+          props: [
+            { name: "[key in K]", type: "number" },
+            { name: "c", type: "string" },
+          ],
+        });
+      }
+    );
+  });
 
   test("should export a generic type", () => {
     return withTSEditor(`type Test<T> = { a: T }`, async () => {
       await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
       await assertClipboardEqualDefinition({
-        name: "Test",
+        name: "Test<T>",
         props: [{ name: "a", type: "T" }],
       });
     });
