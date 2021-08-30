@@ -14,7 +14,6 @@ export function toMarkdownTable(defs: Definition): string {
   markdownText += `| ${spearators.join(" | ")} |\n`;
 
   defs.props.forEach((prop) => {
-    console.log([prop.type, escapeMarkdownText(prop.type)]);
     const values = [
       prop.name,
       `\`${escapeMarkdownText(prop.type)}\``,
