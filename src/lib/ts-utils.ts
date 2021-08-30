@@ -139,19 +139,21 @@ function getCompilerOptions(fileName: string) {
     moduleResolution: ModuleResolutionKind.NodeJs,
   };
 
-  const configFileName = findConfigFile(path.dirname(fileName), (fileName) =>
-    existsSync(fileName)
-  );
-
-  if (configFileName) {
-    const contents = readFileSync(configFileName, "utf-8");
-    const { config } = parseConfigFileTextToJson(configFileName, contents);
-    const res = convertCompilerOptionsFromJson(
-      config.compilerOptions,
-      path.dirname(configFileName),
-      path.basename(configFileName)
+  if (path.isAbsolute(fileName) && existsSync(fileName)) {
+    const configFileName = findConfigFile(path.dirname(fileName), (fileName) =>
+      existsSync(fileName)
     );
-    options = { ...options, ...res.options };
+
+    if (configFileName) {
+      const contents = readFileSync(configFileName, "utf-8");
+      const { config } = parseConfigFileTextToJson(configFileName, contents);
+      const res = convertCompilerOptionsFromJson(
+        config.compilerOptions,
+        path.dirname(configFileName),
+        path.basename(configFileName)
+      );
+      options = { ...options, ...res.options };
+    }
   }
 
   options.noEmit = true;
