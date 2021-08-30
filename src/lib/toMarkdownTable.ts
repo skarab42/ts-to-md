@@ -28,5 +28,5 @@ export function toMarkdownTable(defs: Definition): string {
 }
 
 export function escapeMarkdownText(text: string): string {
-  return text.replaceAll("|", "\\|");
+  return text.replace(/\|/g, "\\|");
 }

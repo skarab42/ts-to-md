@@ -22,6 +22,10 @@ import {
   TypeAliasDeclaration,
   InterfaceType,
   InterfaceTypeWithDeclaredMembers,
+  findConfigFile,
+  convertCompilerOptionsFromJson,
+  parseConfigFileTextToJson,
+  ModuleResolutionKind,
 } from "typescript";
 
 interface ProgramAndSourceFile {
@@ -84,30 +88,41 @@ function createVirtualFS(
   );
 }
 
+function getSourceFromCache(
+  fileName: string,
+  virtualFS: VirtualFS,
+  target: ScriptTarget = ScriptTarget.ESNext
+) {
+  if (virtualFS.has(fileName)) {
+    return virtualFS.get(fileName);
+  }
+
+  const sourceText = sys.readFile(fileName);
+
+  if (!sourceText) {
+    return;
+  }
+
+  const source = createSourceFile(fileName, sourceText, target);
+
+  virtualFS.set(fileName, source);
+
+  return source;
+}
+
 function createCompilerHost(
   virtualFS: VirtualFS,
   target: ScriptTarget = ScriptTarget.ESNext
 ): CompilerHost {
   return {
-    getSourceFile: (fileName: string) => virtualFS.get(fileName),
+    getSourceFile: (fileName: string) => {
+      return getSourceFromCache(fileName, virtualFS, target);
+    },
     fileExists: (fileName: string) => {
-      if (virtualFS.has(fileName)) {
-        return true;
-      }
-
-      if (!existsSync(fileName)) {
-        return false;
-      }
-
-      virtualFS.set(
-        fileName,
-        createSourceFile(fileName, readFileSync(fileName, "utf-8"), target)
-      );
-
-      return true;
+      return !!getSourceFromCache(fileName, virtualFS, target);
     },
     getCanonicalFileName: (fileName: string) => fileName,
-    readFile: () => "",
+    readFile: (fileName: string) => sys.readFile(fileName),
     writeFile: () => {},
     getNewLine: () => "\n",
     getDirectories: () => [],
@@ -118,25 +133,51 @@ function createCompilerHost(
   };
 }
 
-export function createProgramAndGetSourceFile(
-  fileName: string,
-  text: string,
-  options: CompilerOptions = {}
-): ProgramAndSourceFile {
+function getCompilerOptions(fileName: string) {
+  let options: CompilerOptions = {
+    target: ScriptTarget.ESNext,
+    moduleResolution: ModuleResolutionKind.NodeJs,
+  };
+
+  if (path.isAbsolute(fileName) && existsSync(fileName)) {
+    const configFileName = findConfigFile(path.dirname(fileName), (fileName) =>
+      existsSync(fileName)
+    );
+
+    if (configFileName) {
+      const contents = readFileSync(configFileName, "utf-8");
+      const { config } = parseConfigFileTextToJson(configFileName, contents);
+      const res = convertCompilerOptionsFromJson(
+        config.compilerOptions,
+        path.dirname(configFileName),
+        path.basename(configFileName)
+      );
+      options = { ...options, ...res.options };
+    }
+  }
+
+  options.noEmit = true;
+  options.noResolve = false;
   options.skipLibCheck = true;
+  options.importHelpers = false;
   options.skipDefaultLibCheck = true;
 
-  const target = ScriptTarget.ESNext;
+  return options;
+}
 
+export function createProgramAndGetSourceFile(
+  fileName: string,
+  text: string
+): ProgramAndSourceFile {
   fileName = forceTsExtension(posixPath(fileName));
 
+  const options = getCompilerOptions(fileName);
   const virtualFS = new Map([
     ...getDefaultLibVirtualFS(),
-    ...createVirtualFS([{ fileName, text }], target),
+    ...createVirtualFS([{ fileName, text }], options.target),
   ]);
-
   const rootNames = [...defaultLibFileNames, fileName];
-  const compilerHost = createCompilerHost(virtualFS, target);
+  const compilerHost = createCompilerHost(virtualFS, options.target);
   const program = createProgram(rootNames, options, compilerHost);
   const sourceFile = virtualFS.get(fileName)!;
   const checker = program.getTypeChecker();
