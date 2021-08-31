@@ -12,7 +12,7 @@ import {
 } from "vscode";
 import path from "path";
 
-import { Definition } from "../commands/definitionToTable";
+import { Definition } from "../lib/ts-utils";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
 
 export function test(title: string, fn?: Mocha.AsyncFunc) {

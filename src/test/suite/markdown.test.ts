@@ -1,6 +1,6 @@
 import assert from "assert";
 
-import type { DefinitionProp } from "../../commands/definitionToTable";
+import type { DefinitionProp } from "../../lib/ts-utils";
 import { test } from "../utils";
 import { escapeMarkdownText, toMarkdownTable } from "../../lib/toMarkdownTable";
 

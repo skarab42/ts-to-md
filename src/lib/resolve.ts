@@ -1,9 +1,10 @@
 // Ref: https://github.dev/prettier/prettier-vscode/blob/main/src/extension.ts
 // Ref: https://github.com/microsoft/vscode-eslint/blob/1f7b610c3a0f4e8966fd356363e224d805ac1faf/client/src/extension.ts
-import fs from "fs";
 import path from "path";
 import { sys } from "typescript";
+import { TsModule } from "./ts-utils";
 import { execSync } from "child_process";
+import { existsSync, readFileSync } from "fs";
 import { commands, Uri, workspace } from "vscode";
 import { resolveGlobalNodePath, resolveGlobalYarnPath } from "./files";
 
@@ -11,6 +12,10 @@ type PackageManagers = "npm" | "yarn" | "pnpm";
 type GlobalPath = { cache: string | undefined; get(): string | undefined };
 
 // const tsModuleCache: Map<string, string> = new Map();
+
+const defaultTsModulePath = path.dirname(
+  path.dirname(sys.getExecutingFilePath())
+);
 
 const globalPaths: {
   [key: string]: GlobalPath;
@@ -72,7 +77,7 @@ async function resolveGlobalModule(
       moduleName
     );
 
-    if (fs.existsSync(globalModulePath)) {
+    if (existsSync(globalModulePath)) {
       return globalModulePath;
     }
   }
@@ -92,8 +97,8 @@ function resolveLocalModuleRecursive(
 
   const pkgfile = path.join(dir, "package.json");
 
-  if (fs.existsSync(pkgfile)) {
-    const pkg = JSON.parse(fs.readFileSync(pkgfile, "utf-8"));
+  if (existsSync(pkgfile)) {
+    const pkg = JSON.parse(readFileSync(pkgfile, "utf-8"));
     const deps = {
       ...(pkg.devDependencies ?? {}),
       ...(pkg.dependencies ?? {}),
@@ -101,7 +106,7 @@ function resolveLocalModuleRecursive(
 
     if (deps[moduleName]) {
       const modulePath = path.join(dir, "node_modules", moduleName);
-      if (fs.existsSync(modulePath)) {
+      if (existsSync(modulePath)) {
         return modulePath;
       }
     }
@@ -126,19 +131,27 @@ function resolveLocalModule(moduleName: string, file: Uri): string | undefined {
   return resolveLocalModuleRecursive(moduleName, path.dirname(file.fsPath));
 }
 
+export function isScratchFile(filePath: string) {
+  return !path.isAbsolute(filePath) || !existsSync(filePath);
+}
+
 export async function resolveModule(moduleName: string, documentUri: Uri) {
   const userDefinedPackagePath = workspace
     .getConfiguration("ts-to-md")
     .get<string>("typescriptPackagePath");
 
   if (userDefinedPackagePath && userDefinedPackagePath.length) {
-    if (fs.existsSync(userDefinedPackagePath)) {
+    if (existsSync(userDefinedPackagePath)) {
       return userDefinedPackagePath;
     }
 
     throw new Error(
       `TypeScript package not found at ${userDefinedPackagePath}`
     );
+  }
+
+  if (isScratchFile(documentUri.fsPath)) {
+    return defaultTsModulePath;
   }
 
   let modulePath = resolveLocalModule(moduleName, documentUri);
@@ -148,8 +161,15 @@ export async function resolveModule(moduleName: string, documentUri: Uri) {
   }
 
   if (!modulePath) {
-    modulePath = path.dirname(path.dirname(sys.getExecutingFilePath()));
+    modulePath = defaultTsModulePath;
   }
 
   return modulePath;
+}
+
+export async function requireModule(
+  moduleName: string,
+  documentUri: Uri
+): Promise<TsModule> {
+  return require(await resolveModule(moduleName, documentUri));
 }

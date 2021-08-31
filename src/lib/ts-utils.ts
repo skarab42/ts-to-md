@@ -1,31 +1,23 @@
 import path from "path";
 import glob from "glob";
-import { existsSync, readFileSync } from "fs";
+import { isScratchFile } from "./resolve";
 import { getTokenAtPosition } from "tsutils";
-import {
-  sys,
+import { existsSync, readFileSync } from "fs";
+import { TextDocument, Selection } from "vscode";
+
+import type {
   Symbol,
   Program,
-  SourceFile,
   Diagnostic,
+  SourceFile,
   TypeChecker,
   CompilerHost,
   ScriptTarget,
-  createProgram,
-  CompilerOptions,
-  createSourceFile,
-  displayPartsToString,
-  InterfaceDeclaration,
-  isInterfaceDeclaration,
-  isTypeAliasDeclaration,
-  getPositionOfLineAndCharacter,
-  TypeAliasDeclaration,
   InterfaceType,
+  CompilerOptions,
+  InterfaceDeclaration,
+  TypeAliasDeclaration,
   InterfaceTypeWithDeclaredMembers,
-  findConfigFile,
-  convertCompilerOptionsFromJson,
-  parseConfigFileTextToJson,
-  ModuleResolutionKind,
 } from "typescript";
 
 interface ProgramAndSourceFile {
@@ -40,11 +32,29 @@ interface SelectionStart {
   character: number;
 }
 
+export interface Definition {
+  name: string;
+  docs: string;
+  props: DefinitionProp[];
+}
+
+export interface DefinitionProp {
+  name: string;
+  type: string;
+  docs: string;
+  optional: boolean;
+  defaultValue?: string;
+}
+
+export type TsModule = typeof import("typescript");
+
 type VirtualFS = Map<string, SourceFile>;
 type FSEntry = { fileName: string; text: string };
 
 const libFilesVirtualFS: VirtualFS = new Map();
 const defaultLibFileNames: Set<string> = new Set();
+
+let ts: TsModule;
 
 function posixPath(input: string): string {
   return input.split(path.sep).join(path.posix.sep);
@@ -63,7 +73,7 @@ function getDefaultLibVirtualFS() {
     return libFilesVirtualFS;
   }
 
-  const cwd = path.dirname(sys.getExecutingFilePath());
+  const cwd = path.dirname(ts.sys.getExecutingFilePath());
 
   return createVirtualFS(
     glob.sync("lib.*.d.ts", { cwd }).map((fileName) => {
@@ -78,12 +88,12 @@ function getDefaultLibVirtualFS() {
 
 function createVirtualFS(
   entries: FSEntry[],
-  target: ScriptTarget = ScriptTarget.ESNext
+  target: ScriptTarget = ts.ScriptTarget.ESNext
 ): VirtualFS {
   return new Map(
     entries.map(({ fileName, text }) => [
       fileName,
-      createSourceFile(fileName, text, target),
+      ts.createSourceFile(fileName, text, target),
     ])
   );
 }
@@ -91,19 +101,19 @@ function createVirtualFS(
 function getSourceFromCache(
   fileName: string,
   virtualFS: VirtualFS,
-  target: ScriptTarget = ScriptTarget.ESNext
+  target: ScriptTarget = ts.ScriptTarget.ESNext
 ) {
   if (virtualFS.has(fileName)) {
     return virtualFS.get(fileName);
   }
 
-  const sourceText = sys.readFile(fileName);
+  const sourceText = ts.sys.readFile(fileName);
 
   if (!sourceText) {
     return;
   }
 
-  const source = createSourceFile(fileName, sourceText, target);
+  const source = ts.createSourceFile(fileName, sourceText, target);
 
   virtualFS.set(fileName, source);
 
@@ -112,7 +122,7 @@ function getSourceFromCache(
 
 function createCompilerHost(
   virtualFS: VirtualFS,
-  target: ScriptTarget = ScriptTarget.ESNext
+  target: ScriptTarget = ts.ScriptTarget.ESNext
 ): CompilerHost {
   return {
     getSourceFile: (fileName: string) => {
@@ -122,7 +132,7 @@ function createCompilerHost(
       return !!getSourceFromCache(fileName, virtualFS, target);
     },
     getCanonicalFileName: (fileName: string) => fileName,
-    readFile: (fileName: string) => sys.readFile(fileName),
+    readFile: (fileName: string) => ts.sys.readFile(fileName),
     writeFile: () => {},
     getNewLine: () => "\n",
     getDirectories: () => [],
@@ -135,19 +145,20 @@ function createCompilerHost(
 
 function getCompilerOptions(fileName: string) {
   let options: CompilerOptions = {
-    target: ScriptTarget.ESNext,
-    moduleResolution: ModuleResolutionKind.NodeJs,
+    target: ts.ScriptTarget.ESNext,
+    moduleResolution: ts.ModuleResolutionKind.NodeJs,
   };
 
-  if (path.isAbsolute(fileName) && existsSync(fileName)) {
-    const configFileName = findConfigFile(path.dirname(fileName), (fileName) =>
-      existsSync(fileName)
+  if (!isScratchFile(fileName)) {
+    const configFileName = ts.findConfigFile(
+      path.dirname(fileName),
+      (fileName) => existsSync(fileName)
     );
 
     if (configFileName) {
       const contents = readFileSync(configFileName, "utf-8");
-      const { config } = parseConfigFileTextToJson(configFileName, contents);
-      const res = convertCompilerOptionsFromJson(
+      const { config } = ts.parseConfigFileTextToJson(configFileName, contents);
+      const res = ts.convertCompilerOptionsFromJson(
         config.compilerOptions,
         path.dirname(configFileName),
         path.basename(configFileName)
@@ -178,7 +189,7 @@ export function createProgramAndGetSourceFile(
   ]);
   const rootNames = [...defaultLibFileNames, fileName];
   const compilerHost = createCompilerHost(virtualFS, options.target);
-  const program = createProgram(rootNames, options, compilerHost);
+  const program = ts.createProgram(rootNames, options, compilerHost);
   const sourceFile = virtualFS.get(fileName)!;
   const checker = program.getTypeChecker();
   const diagnostics = program.getSemanticDiagnostics();
@@ -190,7 +201,7 @@ export function getDocumentationCommentAsString(
   checker: TypeChecker,
   symbol: Symbol
 ): string {
-  return displayPartsToString(symbol.getDocumentationComment(checker));
+  return ts.displayPartsToString(symbol.getDocumentationComment(checker));
 }
 
 function getNearestDefinitionFromPosition(
@@ -209,8 +220,8 @@ function getNearestDefinitionFromPosition(
 
   if (
     token.parent &&
-    (isTypeAliasDeclaration(token.parent) ||
-      isInterfaceDeclaration(token.parent))
+    (ts.isTypeAliasDeclaration(token.parent) ||
+      ts.isInterfaceDeclaration(token.parent))
   ) {
     return token.parent;
   }
@@ -224,7 +235,7 @@ export function getNearestDefinition(
 ): TypeAliasDeclaration | InterfaceDeclaration | null {
   return getNearestDefinitionFromPosition(
     sourceFile,
-    getPositionOfLineAndCharacter(sourceFile, line, character)
+    ts.getPositionOfLineAndCharacter(sourceFile, line, character)
   );
 }
 
@@ -237,4 +248,121 @@ export function isInterfaceTypeWithDeclaredMembers(
     typeof (interfaceType as InterfaceTypeWithDeclaredMembers)
       .declaredNumberIndexInfo !== "undefined"
   );
+}
+
+export function getDefinitions({
+  document,
+  selection,
+  tsModule,
+}: {
+  document: TextDocument;
+  selection: Selection;
+  tsModule: TsModule;
+}) {
+  ts = tsModule;
+
+  const { diagnostics, sourceFile, checker } = createProgramAndGetSourceFile(
+    document.fileName,
+    document.getText()
+  );
+
+  if (diagnostics.length) {
+    throw new Error(
+      "Could not generate definitions for your type/interface due to type-checking issues." +
+        "Please fix your code TypeScript errors and try again."
+    );
+  }
+
+  const nearestType = getNearestDefinition(sourceFile, selection.start);
+
+  if (!nearestType) {
+    throw new Error(
+      "Could not find any type/interface nearest your mouse position."
+    );
+  }
+
+  const type = checker.getTypeAtLocation(nearestType.name);
+  const stringIndex = type.getStringIndexType();
+  const numberIndex = type.getNumberIndexType();
+  const props = type.getProperties();
+
+  if (!stringIndex && !numberIndex && !props.length) {
+    throw new Error("Could not generate markdown for empty definition.");
+  }
+
+  const symbol = type.symbol ?? type.aliasSymbol;
+
+  if (!symbol) {
+    throw new Error("Could not generate markdown for this type of definition.");
+  }
+
+  const docs = getDocumentationCommentAsString(checker, symbol);
+
+  const defs: Definition = {
+    name: checker.typeToString(type),
+    props: [],
+    docs,
+  };
+
+  if (
+    (stringIndex || numberIndex) &&
+    type.isClassOrInterface() &&
+    isInterfaceTypeWithDeclaredMembers(type)
+  ) {
+    const index = type.declaredStringIndexInfo ?? type.declaredNumberIndexInfo;
+    const parameter = index?.declaration?.parameters[0];
+
+    if (index && parameter) {
+      defs.props.push({
+        name: `[${parameter.getFullText()}]`,
+        type: checker.typeToString(index.type),
+        defaultValue: undefined,
+        optional: true,
+        docs,
+      });
+    }
+  }
+
+  if (type.isUnionOrIntersection()) {
+    for (const unionOrIntersectionType of type.types) {
+      if (unionOrIntersectionType.aliasSymbol) {
+        continue;
+      }
+
+      const declaration = unionOrIntersectionType.symbol.declarations?.[0];
+
+      if (declaration && ts.isMappedTypeNode(declaration) && declaration.type) {
+        defs.props.push({
+          name: `[${declaration.typeParameter.getFullText()}]`,
+          type: declaration.type.getText(),
+          defaultValue: undefined,
+          optional: false,
+          docs,
+        });
+      }
+    }
+  }
+
+  for (const prop of props) {
+    const declaration = prop.valueDeclaration || prop.declarations?.[0];
+    const propType = checker.getTypeOfSymbolAtLocation(prop, declaration!);
+    const optional = (prop.flags & ts.SymbolFlags.Optional) !== 0;
+    const docs = getDocumentationCommentAsString(checker, prop);
+    const jsDocs = prop.getJsDocTags();
+
+    const defaultTag = jsDocs.find((tag) =>
+      ["defaultvalue", "default"].includes(tag.name)
+    );
+    const defaultValue = defaultTag && defaultTag?.text?.[0]?.text;
+
+    defs.props.push({
+      name: prop.getName(),
+      type: checker.typeToString(propType),
+      defaultValue,
+      optional,
+      docs,
+    });
+  }
+
+  return defs;
 }
