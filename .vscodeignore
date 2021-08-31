@@ -9,3 +9,4 @@ src/**
 .github/**
 images/**
 !images/logo.png
+!node_modules/typescript/lib/lib.*.d.ts
