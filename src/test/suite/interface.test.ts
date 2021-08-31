@@ -1,10 +1,10 @@
 import { commands } from "vscode";
+import sinon from "sinon";
 
 import { DEFINITION_TO_TABLE_COMMAND } from "../../commands/definitionToTable";
 import {
   assertClipboardEqualDefinition,
   assertEmptyClipboard,
-  emptyClipboard,
   test,
   withTSEditor,
 } from "../utils";
@@ -294,20 +294,30 @@ interface Test {
 });
 
 suite("Interface errors", () => {
+  let consoleLogStub: sinon.SinonStub;
+
+  setup(() => {
+    consoleLogStub = sinon.stub(console, "log");
+  });
+
+  teardown(() => {
+    consoleLogStub.restore();
+  });
+
   test("should not export an empty interface", () => {
     return withTSEditor(`interface Test {}`, async () => {
-      await emptyClipboard();
       await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
+      sinon.assert.calledOnce(consoleLogStub);
       await assertEmptyClipboard();
     });
   });
 
   test("should not export an interface with invalid TypeScript code", () => {
     return withTSEditor(`interface Test {}; type A`, async () => {
-      await emptyClipboard();
       await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
+      sinon.assert.calledOnce(consoleLogStub);
       await assertEmptyClipboard();
     });
   });
