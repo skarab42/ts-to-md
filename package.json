@@ -50,7 +50,8 @@
     "clean": "rimraf dist",
     "build": "yarn clean && tsc",
     "pretest": "yarn build",
-    "test": "node dist/test/runTest.js"
+    "test": "node dist/test/runTest.js",
+    "package": "yarn build && vsce package"
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
