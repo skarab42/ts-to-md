@@ -69,8 +69,8 @@
   },
   "icon": "images/logo.png",
   "galleryBanner": {
-    "color": "#3178C6",
-    "theme": "light"
+    "color": "#282C34",
+    "theme": "dark"
   },
   "categories": [
     "Other",
