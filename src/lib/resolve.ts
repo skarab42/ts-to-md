@@ -2,6 +2,7 @@
 // Ref: https://github.com/microsoft/vscode-eslint/blob/1f7b610c3a0f4e8966fd356363e224d805ac1faf/client/src/extension.ts
 import fs from "fs";
 import path from "path";
+import { sys } from "typescript";
 import { execSync } from "child_process";
 import { commands, Uri, workspace } from "vscode";
 import { resolveGlobalNodePath, resolveGlobalYarnPath } from "./files";
@@ -49,7 +50,7 @@ function globalPathGet(packageManager: PackageManagers): string | undefined {
   return undefined;
 }
 
-export async function resolveGlobalModule(
+async function resolveGlobalModule(
   moduleName: string,
   uri: Uri
 ): Promise<string | undefined> {
@@ -79,7 +80,7 @@ export async function resolveGlobalModule(
   return;
 }
 
-export function resolveLocalModuleRecursive(
+function resolveLocalModuleRecursive(
   moduleName: string,
   dir: string
 ): string | undefined {
@@ -121,10 +122,7 @@ export function resolveLocalModuleRecursive(
   return modulePath;
 }
 
-export function resolveLocalModule(
-  moduleName: string,
-  file: Uri
-): string | undefined {
+function resolveLocalModule(moduleName: string, file: Uri): string | undefined {
   return resolveLocalModuleRecursive(moduleName, path.dirname(file.fsPath));
 }
 
@@ -134,15 +132,23 @@ export async function resolveModule(moduleName: string, documentUri: Uri) {
     .get<string>("typescriptPackagePath");
 
   if (userDefinedPackagePath && userDefinedPackagePath.length) {
-    return fs.existsSync(userDefinedPackagePath)
-      ? userDefinedPackagePath
-      : undefined;
+    if (fs.existsSync(userDefinedPackagePath)) {
+      return userDefinedPackagePath;
+    }
+
+    throw new Error(
+      `TypeScript package not found at ${userDefinedPackagePath}`
+    );
   }
 
   let modulePath = resolveLocalModule(moduleName, documentUri);
 
   if (!modulePath) {
     modulePath = await resolveGlobalModule(moduleName, documentUri);
+  }
+
+  if (!modulePath) {
+    modulePath = path.dirname(path.dirname(sys.getExecutingFilePath()));
   }
 
   return modulePath;
