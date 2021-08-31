@@ -2,7 +2,7 @@
   "name": "ts-to-md",
   "displayName": "TypeScript Definitions to Markdown",
   "description": "Export your TypeScript definitions in Mardown format directly in your clipboard ready to past in your README.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "./dist/extension.js",
   "license": "MIT",
   "engines": {
