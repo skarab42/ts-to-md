@@ -171,29 +171,6 @@ suite("Types", () => {
   test("should export a mapped type mapping over an interface", () => {
     return withTSEditor(
       `type Test<K extends keyof Test1> = {
-      [key in K]: number;
-    };
-    interface Test1 {
-      a: string;
-      b: number;
-    }`,
-      async () => {
-        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
-
-        await assertClipboardEqualDefinition({
-          name: "ToNumber<Test1>",
-          props: [
-            { name: "a", type: "number" },
-            { name: "b", type: "number" },
-          ],
-        });
-      }
-    );
-  });
-
-  test("should export a mapped type mapping over an interface combined with an intersection", () => {
-    return withTSEditor(
-      `type Test<K extends keyof Test1> = {
     [key in K]: number;
   } & { c: string };
   interface Test1 {
