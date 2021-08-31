@@ -79,10 +79,9 @@ export async function resolveGlobalModule(
   return;
 }
 
-function resolveLocalModuleRecursive(
+export function resolveLocalModuleRecursive(
   moduleName: string,
-  dir: string,
-  workspaceDir: string
+  dir: string
 ): string | undefined {
   // const moduleId = `${dir}:${moduleName}`;
 
@@ -107,15 +106,13 @@ function resolveLocalModuleRecursive(
     }
   }
 
-  if (dir === workspaceDir) {
+  const nextDir = path.dirname(dir);
+
+  if (nextDir === dir) {
     return;
   }
 
-  const modulePath = resolveLocalModuleRecursive(
-    moduleName,
-    path.dirname(dir),
-    workspaceDir
-  );
+  const modulePath = resolveLocalModuleRecursive(moduleName, nextDir);
 
   // if (modulePath) {
   //   tsModuleCache.set(moduleId, modulePath);
@@ -128,17 +125,7 @@ export function resolveLocalModule(
   moduleName: string,
   file: Uri
 ): string | undefined {
-  const workspaceDir = workspace.getWorkspaceFolder(file);
-
-  if (!workspaceDir) {
-    return;
-  }
-
-  return resolveLocalModuleRecursive(
-    moduleName,
-    path.dirname(file.fsPath),
-    workspaceDir.uri.fsPath
-  );
+  return resolveLocalModuleRecursive(moduleName, path.dirname(file.fsPath));
 }
 
 export async function resolveModule(moduleName: string, documentUri: Uri) {
