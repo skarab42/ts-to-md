@@ -51,7 +51,8 @@
     "build": "yarn clean && tsc",
     "pretest": "yarn build",
     "test": "node dist/test/runTest.js",
-    "package": "yarn build && vsce package"
+    "package": "yarn build && vsce package",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@types/glob": "^7.1.4",
@@ -60,7 +61,8 @@
     "@types/vscode": "^1.59.0",
     "mocha": "8.4.0",
     "rimraf": "^3.0.2",
-    "vscode-test": "1.6.1"
+    "vscode-test": "1.6.1",
+    "husky": "^7.0.0"
   },
   "dependencies": {
     "glob": "^7.1.7",
