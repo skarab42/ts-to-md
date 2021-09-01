@@ -8,16 +8,18 @@ TypeScript Definitions to Markdown (ts-to-md) is an VS Code extension that help 
 
 ## Features
 
-- Exports Type and Interface
-- Extends, Omit, Partial...
-- Indexed/Numbered index
-- Nested definitions
-- Markdown table output
+- Exports Type and Interface.
+- Outputs Markdown table (or list).
+- Take care of BlockDoc comments.
+- Bring default value from TSDoc @default tag.
+- Also works with unsaved or scratch file.
+- Uses your local/global typescript version.
+- Fallback to embedded typescript version.
+- Set a custom fixed version of typescript.
 
 _Planned_
 
-- Markdown list output
-- Configurable
+- Markdown list output.
 - ...
 
 ## Installation
