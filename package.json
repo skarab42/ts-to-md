@@ -9,7 +9,7 @@
     "vscode": "^1.59.0"
   },
   "publisher": "skarab42",
-  "homepage": "https://github.com/skarab42/ts-to-md/README.md",
+  "homepage": "https://github.com/skarab42/ts-to-md/tree/v1.0.1",
   "bugs": {
     "url": "https://github.com/skarab42/ts-to-md/issues",
     "email": "contact@skarab42.dev"
