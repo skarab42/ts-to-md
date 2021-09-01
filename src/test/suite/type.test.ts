@@ -1,10 +1,10 @@
 import { commands } from "vscode";
+import sinon from "sinon";
 
 import { DEFINITION_TO_TABLE_COMMAND } from "../../commands/definitionToTable";
 import {
   assertClipboardEqualDefinition,
   assertEmptyClipboard,
-  emptyClipboard,
   test,
   withTSEditor,
 } from "../utils";
@@ -171,29 +171,6 @@ suite("Types", () => {
   test("should export a mapped type mapping over an interface", () => {
     return withTSEditor(
       `type Test<K extends keyof Test1> = {
-      [key in K]: number;
-    };
-    interface Test1 {
-      a: string;
-      b: number;
-    }`,
-      async () => {
-        await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
-
-        await assertClipboardEqualDefinition({
-          name: "ToNumber<Test1>",
-          props: [
-            { name: "a", type: "number" },
-            { name: "b", type: "number" },
-          ],
-        });
-      }
-    );
-  });
-
-  test("should export a mapped type mapping over an interface combined with an intersection", () => {
-    return withTSEditor(
-      `type Test<K extends keyof Test1> = {
     [key in K]: number;
   } & { c: string };
   interface Test1 {
@@ -227,29 +204,39 @@ suite("Types", () => {
 });
 
 suite("Type errors", () => {
+  let consoleLogStub: sinon.SinonStub;
+
+  setup(() => {
+    consoleLogStub = sinon.stub(console, "log");
+  });
+
+  teardown(() => {
+    consoleLogStub.restore();
+  });
+
   test("should not export a type which is not an object type", () => {
     return withTSEditor(`type Test = string`, async () => {
-      await emptyClipboard();
       await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
+      sinon.assert.calledOnce(consoleLogStub);
       await assertEmptyClipboard();
     });
   });
 
   test("should not export an empty object type", () => {
     return withTSEditor(`type Test = {}`, async () => {
-      await emptyClipboard();
       await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
+      sinon.assert.calledOnce(consoleLogStub);
       await assertEmptyClipboard();
     });
   });
 
   test("should not export a type with invalid TypeScript code", () => {
     return withTSEditor(`type Test = {}; type A`, async () => {
-      await emptyClipboard();
       await commands.executeCommand(DEFINITION_TO_TABLE_COMMAND);
 
+      sinon.assert.calledOnce(consoleLogStub);
       await assertEmptyClipboard();
     });
   });

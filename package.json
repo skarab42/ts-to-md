@@ -9,7 +9,7 @@
     "vscode": "^1.59.0"
   },
   "publisher": "skarab42",
-  "homepage": "https://github.com/skarab42/ts-to-md/README.md",
+  "homepage": "https://github.com/skarab42/ts-to-md/tree/v1.0.1",
   "bugs": {
     "url": "https://github.com/skarab42/ts-to-md/issues",
     "email": "contact@skarab42.dev"
@@ -22,6 +22,22 @@
     "onLanguage:typescript"
   ],
   "contributes": {
+    "configuration": {
+      "title": "TypeScript Definitions to Markdown",
+      "properties": {
+        "ts-to-md.typescriptModule.path": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absolute path to your fixed version of typescript which will be used by default or as a fallback. The path must exist and must point to the root of the module, e.g. `/project/node_modules/typescript`. Leave blank if you do not want a fixed version."
+        },
+        "ts-to-md.typescriptModule.pathAsFallback": {
+          "type": "boolean",
+          "default": false,
+          "title": "As Fallback",
+          "markdownDescription": "If you check this box the path specified above will be used as a fallback if no module is found locally or globally instead of the one embedded by the extension."
+        }
+      }
+    },
     "commands": [
       {
         "title": "Definition to markdown table",
@@ -58,11 +74,13 @@
     "@types/glob": "^7.1.4",
     "@types/mocha": "8.2.2",
     "@types/node": "^16.7.2",
+    "@types/sinon": "10.0.2",
     "@types/vscode": "^1.59.0",
+    "husky": "^7.0.0",
     "mocha": "8.4.0",
     "rimraf": "^3.0.2",
-    "vscode-test": "1.6.1",
-    "husky": "^7.0.0"
+    "sinon": "11.1.2",
+    "vscode-test": "1.6.1"
   },
   "dependencies": {
     "glob": "^7.1.7",

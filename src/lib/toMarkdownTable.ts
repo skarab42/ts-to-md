@@ -1,4 +1,4 @@
-import { Definition } from "../commands/definitionToTable";
+import { Definition } from "./ts-utils";
 
 export function toMarkdownTable(defs: Definition): string {
   let markdownText = `# ${defs.name}\n\n`;

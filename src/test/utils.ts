@@ -12,7 +12,7 @@ import {
 } from "vscode";
 import path from "path";
 
-import { Definition } from "../commands/definitionToTable";
+import { Definition } from "../lib/ts-utils";
 import { toMarkdownTable } from "../lib/toMarkdownTable";
 
 export function test(title: string, fn?: Mocha.AsyncFunc) {
@@ -82,7 +82,7 @@ async function assertClipboardEqual(expected: string) {
   assert.strictEqual(text, expected);
 }
 
-export function emptyClipboard() {
+function emptyClipboard() {
   return env.clipboard.writeText("");
 }
 
@@ -91,6 +91,8 @@ export function assertEmptyClipboard() {
 }
 
 async function showEditor(uri: Uri): Promise<TextEditor> {
+  await commands.executeCommand("workbench.action.closeAllEditors");
+
   const document = await workspace.openTextDocument(uri);
 
   // Add a little bit of delay after opening a new file with a document language set to TypeScript as the extension is
@@ -107,6 +109,8 @@ async function runAtPosition(
 ) {
   const selection = new Selection(cursorPosition, cursorPosition);
   editor.selection = selection;
+
+  await emptyClipboard();
 
   await run();
 
