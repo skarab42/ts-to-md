@@ -154,8 +154,6 @@ export async function resolveModule(moduleName: string, documentUri: Uri) {
       .getConfiguration("ts-to-md")
       .get<boolean>("typescriptModule.pathAsFallback") ?? false;
 
-  console.log({ userDefinedModulePath, userDefinedModulePathAsFallback });
-
   if (userDefinedModulePath.length && !userDefinedModulePathAsFallback) {
     return getUserDefinedModulePath(userDefinedModulePath);
   }
