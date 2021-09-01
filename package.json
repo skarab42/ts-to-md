@@ -25,10 +25,16 @@
     "configuration": {
       "title": "TypeScript Definitions to Markdown",
       "properties": {
-        "ts-to-md.typescriptPackagePath": {
+        "ts-to-md.typescriptModule.path": {
           "type": "string",
           "default": "",
-          "description": "Absolute path to typescript package."
+          "markdownDescription": "Absolute path to your fixed version of typescript which will be used by default or as a fallback. The path must exist and must point to the root of the module, e.g. `/project/node_modules/typescript`. Leave blank if you do not want a fixed version."
+        },
+        "ts-to-md.typescriptModule.pathAsFallback": {
+          "type": "boolean",
+          "default": false,
+          "title": "As Fallback",
+          "markdownDescription": "If you check this box the path specified above will be used as a fallback if no module is found locally or globally instead of the one embedded by the extension."
         }
       }
     },

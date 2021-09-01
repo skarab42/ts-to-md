@@ -135,19 +135,29 @@ export function isScratchFile(filePath: string) {
   return !path.isAbsolute(filePath) || !existsSync(filePath);
 }
 
+function getUserDefinedModulePath(modulePath: string) {
+  if (existsSync(modulePath)) {
+    return modulePath;
+  }
+
+  throw new Error(`TypeScript package not found at ${modulePath}`);
+}
+
 export async function resolveModule(moduleName: string, documentUri: Uri) {
-  const userDefinedPackagePath = workspace
-    .getConfiguration("ts-to-md")
-    .get<string>("typescriptPackagePath");
+  const userDefinedModulePath =
+    workspace
+      .getConfiguration("ts-to-md")
+      .get<string>("typescriptModule.path") ?? "";
 
-  if (userDefinedPackagePath && userDefinedPackagePath.length) {
-    if (existsSync(userDefinedPackagePath)) {
-      return userDefinedPackagePath;
-    }
+  const userDefinedModulePathAsFallback =
+    workspace
+      .getConfiguration("ts-to-md")
+      .get<boolean>("typescriptModule.pathAsFallback") ?? false;
 
-    throw new Error(
-      `TypeScript package not found at ${userDefinedPackagePath}`
-    );
+  console.log({ userDefinedModulePath, userDefinedModulePathAsFallback });
+
+  if (userDefinedModulePath.length && !userDefinedModulePathAsFallback) {
+    return getUserDefinedModulePath(userDefinedModulePath);
   }
 
   if (isScratchFile(documentUri.fsPath)) {
@@ -158,6 +168,14 @@ export async function resolveModule(moduleName: string, documentUri: Uri) {
 
   if (!modulePath) {
     modulePath = await resolveGlobalModule(moduleName, documentUri);
+  }
+
+  if (
+    !modulePath &&
+    userDefinedModulePath.length &&
+    userDefinedModulePathAsFallback
+  ) {
+    return getUserDefinedModulePath(userDefinedModulePath);
   }
 
   if (!modulePath) {
