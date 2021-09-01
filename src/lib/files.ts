@@ -7,6 +7,11 @@
 import { spawnSync, SpawnSyncOptionsWithStringEncoding } from "child_process";
 import * as path from "path";
 
+interface YarnJsonFormat {
+  type: string;
+  data: string;
+}
+
 function isWindows(): boolean {
   return process.platform === "win32";
 }
@@ -63,11 +68,6 @@ export function resolveGlobalNodePath(
   } finally {
     process.removeListener("SIGPIPE", handler);
   }
-}
-
-interface YarnJsonFormat {
-  type: string;
-  data: string;
 }
 
 /*

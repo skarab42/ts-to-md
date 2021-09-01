@@ -20,6 +20,25 @@ import type {
   InterfaceTypeWithDeclaredMembers,
 } from "typescript";
 
+export type TsModule = typeof import("typescript");
+
+type VirtualFS = Map<string, SourceFile>;
+type FSEntry = { fileName: string; text: string };
+
+export interface DefinitionProp {
+  name: string;
+  type: string;
+  docs: string;
+  optional: boolean;
+  defaultValue?: string;
+}
+
+export interface Definition {
+  name: string;
+  docs: string;
+  props: DefinitionProp[];
+}
+
 interface ProgramAndSourceFile {
   program: Program;
   sourceFile: SourceFile;
@@ -32,29 +51,10 @@ interface SelectionStart {
   character: number;
 }
 
-export interface Definition {
-  name: string;
-  docs: string;
-  props: DefinitionProp[];
-}
-
-export interface DefinitionProp {
-  name: string;
-  type: string;
-  docs: string;
-  optional: boolean;
-  defaultValue?: string;
-}
-
-export type TsModule = typeof import("typescript");
-
-type VirtualFS = Map<string, SourceFile>;
-type FSEntry = { fileName: string; text: string };
+let ts: TsModule;
 
 const libFilesVirtualFS: VirtualFS = new Map();
 const defaultLibFileNames: Set<string> = new Set();
-
-let ts: TsModule;
 
 function posixPath(input: string): string {
   return input.split(path.sep).join(path.posix.sep);
@@ -176,7 +176,7 @@ function getCompilerOptions(fileName: string) {
   return options;
 }
 
-export function createProgramAndGetSourceFile(
+function createProgramAndGetSourceFile(
   fileName: string,
   text: string
 ): ProgramAndSourceFile {
@@ -197,7 +197,7 @@ export function createProgramAndGetSourceFile(
   return { program, diagnostics, sourceFile, checker };
 }
 
-export function getDocumentationCommentAsString(
+function getDocumentationCommentAsString(
   checker: TypeChecker,
   symbol: Symbol
 ): string {
@@ -229,7 +229,7 @@ function getNearestDefinitionFromPosition(
   return getNearestDefinitionFromPosition(sourceFile, position - 1);
 }
 
-export function getNearestDefinition(
+function getNearestDefinition(
   sourceFile: SourceFile,
   { line, character }: SelectionStart
 ): TypeAliasDeclaration | InterfaceDeclaration | null {
@@ -239,7 +239,7 @@ export function getNearestDefinition(
   );
 }
 
-export function isInterfaceTypeWithDeclaredMembers(
+function isInterfaceTypeWithDeclaredMembers(
   interfaceType: InterfaceType
 ): interfaceType is InterfaceTypeWithDeclaredMembers {
   return (
